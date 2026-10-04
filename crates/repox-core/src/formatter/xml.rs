@@ -21,7 +21,8 @@ use crate::tree::generate_file_tree;
 /// </file>
 /// ```
 pub fn format_xml(files: &[RepoFile]) -> String {
-    let mut output = String::with_capacity(files.iter().map(|f| f.content.len() + 128).sum::<usize>() + 2048);
+    let mut output =
+        String::with_capacity(files.iter().map(|f| f.content.len() + 128).sum::<usize>() + 2048);
 
     // 1. Generate repository structure tree
     let paths: Vec<_> = files.iter().map(|f| &f.relative_path).collect();

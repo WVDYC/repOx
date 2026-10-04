@@ -53,7 +53,15 @@ cargo build --release
 
 ## ⚡ Quickstart
 
-### 1. Copy repository directly to clipboard
+### 1. Interactive TUI Mode (`-i` / `--tui`)
+```bash
+repox -i
+# or with Anthropic Claude token calibration:
+repox -i -p claude
+```
+*Launches an ultra-responsive, lazygit-style terminal file manager with live preview, fuzzy search (`/`), and real-time context token budgeting.*
+
+### 2. Copy repository directly to clipboard
 ```bash
 repox -c
 ```
@@ -62,7 +70,7 @@ repox -c
 ✓ Copied to clipboard: 42 files (142.6 KB) in 4.12ms
 ```
 
-### 2. Include accurate token count
+### 3. Include accurate token count
 ```bash
 repox -c -t -p claude
 ```
@@ -70,20 +78,52 @@ repox -c -t -p claude
 ✓ Copied to clipboard: 42 files (142.6 KB, 38,120 tokens) in 38.50ms
 ```
 
-### 3. Save formatted Markdown to a file
+### 4. Save formatted Markdown to a file
 ```bash
 repox -f markdown -o context.md
 ```
 
-### 4. Target a subfolder with file size and depth limits
+### 5. Target a subfolder with file size and depth limits
 ```bash
 repox src/ -s 500KB -d 3 -o prompt.xml
 ```
 
-### 5. Pipe clean prompt output into another tool
+### 6. Pipe clean prompt output into another tool
 ```bash
 repox -q | pbcopy
 ```
+
+---
+
+## 🖥️ Interactive Terminal UI (TUI)
+
+Launch the interactive interface with `repox -i` or `repox --tui`. Designed for high-speed exploration and zero-latency selection on large repositories:
+
+```text
+┌── Files ──────────────────────────────────┐┌── Preview: src/main.rs ──────────────┐
+│ ▸ [x] crates/                             ││ 1 │ use clap::Parser;                 │
+│ ▾ [x] src/                                ││ 2 │ use color_eyre::eyre::Result;     │
+│   [x] cli.rs                     4.2 KB   ││ 3 │                                   │
+│   [x] main.rs                    2.8 KB   ││ 4 │ fn main() -> Result<()> {         │
+│   [x] Cargo.toml                 1.4 KB   ││ 5 │     // ...                        │
+└───────────────────────────────────────────┘└───────────────────────────────────────┘
+  [Claude 3.5 Sonnet] 3/3 files | 18,420 / 200,000 tokens (9.2%) [■■░░░░░░░░░░] 8.4 KB
+  [↑/↓] Navigate  [Space] Toggle  [/] Filter  [a] Toggle All  [c] Copy  [Enter] Output  [q] Quit
+```
+
+### Keybindings
+
+| Key | Action |
+| :--- | :--- |
+| `↑` / `k` or `↓` / `j` | Move selection cursor up / down |
+| `←` / `h` or `→` / `l` | Collapse / Expand directory folder |
+| `Space` | Toggle file or folder selection (cascading tri-state checkboxes `[ ]`, `[-]`, `[x]`) |
+| `a` | Toggle / invert all files |
+| `/` | Open live fuzzy search filter (powered by `nucleo-matcher`) |
+| `Esc` | Clear active filter query / cancel |
+| `c` | **Copy to clipboard**: copy formatted context for selected files and exit |
+| `Enter` | **Output**: on a file, output context to stdout/file and exit; on a folder, toggle expand/collapse |
+| `q` | Quit without action |
 
 ---
 
@@ -96,6 +136,7 @@ Arguments:
   [PATH]                     Target repository directory [default: .]
 
 Options:
+  -i, --interactive          Launch interactive terminal UI file picker (alias: --tui)
   -f, --format <FORMAT>      Format template: 'xml' (Claude-optimized) or 'markdown' / 'md' [default: xml]
   -c, --copy                 Copy output context directly to system clipboard
   -o, --output <FILE>        Write formatted context to an output file instead of stdout
@@ -107,9 +148,8 @@ Options:
       --no-repoxignore       Disable respecting .repoxignore files
       --include-hidden       Include hidden files and folders
   -e, --exclude <GLOB>       Glob pattern to exclude (can be specified multiple times)
-  -i, --include <GLOB>       Glob pattern to include exclusively (can be specified multiple times)
+  -I, --include <GLOB>       Glob pattern to include exclusively (can be specified multiple times)
   -j, --threads <N>          Worker threads count (defaults to logical CPU core count)
-      --tui                  Launch interactive terminal UI file picker
   -q, --quiet                Silence informational statistics on stderr
   -v, --verbose              Enable verbose debug logs
   -h, --help                 Print help

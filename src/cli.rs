@@ -1,5 +1,5 @@
-use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::Parser;
+use clap::builder::styling::{AnsiColor, Effects, Styles};
 use repox_core::domain::{OutputFormat, ScanOptions, TokenProfile};
 use std::path::PathBuf;
 
@@ -38,7 +38,11 @@ pub fn parse_human_size(s: &str) -> std::result::Result<u64, String> {
         "K" | "KB" | "KIB" => 1024.0,
         "M" | "MB" | "MIB" => 1024.0 * 1024.0,
         "G" | "GB" | "GIB" => 1024.0 * 1024.0 * 1024.0,
-        other => return Err(format!("Unknown unit '{other}'. Supported units: B, KB, MB, GB")),
+        other => {
+            return Err(format!(
+                "Unknown unit '{other}'. Supported units: B, KB, MB, GB"
+            ));
+        }
     };
 
     Ok((value * multiplier) as u64)
@@ -129,7 +133,10 @@ pub struct Cli {
     pub no_gitignore: bool,
 
     /// Do not respect `.repoxignore` rules during traversal.
-    #[arg(long = "no-repoxignore", help = "Disable respecting .repoxignore files")]
+    #[arg(
+        long = "no-repoxignore",
+        help = "Disable respecting .repoxignore files"
+    )]
     pub no_repoxignore: bool,
 
     /// Include hidden files and directories (names starting with '.').
@@ -188,9 +195,11 @@ pub struct Cli {
 impl Cli {
     /// Converts CLI options into `repox_core::ScanOptions`.
     pub fn to_scan_options(&self) -> ScanOptions {
-        let threads = self
-            .threads
-            .unwrap_or_else(|| std::thread::available_parallelism().map(|p| p.get()).unwrap_or(4));
+        let threads = self.threads.unwrap_or_else(|| {
+            std::thread::available_parallelism()
+                .map(|p| p.get())
+                .unwrap_or(4)
+        });
 
         ScanOptions {
             root: self.path.clone(),
@@ -221,7 +230,10 @@ mod tests {
         assert_eq!(parse_human_size("1KB").unwrap(), 1024);
         assert_eq!(parse_human_size("10k").unwrap(), 10 * 1024);
         assert_eq!(parse_human_size("1MB").unwrap(), 1024 * 1024);
-        assert_eq!(parse_human_size("1.5MB").unwrap(), (1.5 * 1024.0 * 1024.0) as u64);
+        assert_eq!(
+            parse_human_size("1.5MB").unwrap(),
+            (1.5 * 1024.0 * 1024.0) as u64
+        );
         assert_eq!(parse_human_size("1GB").unwrap(), 1024 * 1024 * 1024);
         assert!(parse_human_size("").is_err());
         assert!(parse_human_size("invalid").is_err());

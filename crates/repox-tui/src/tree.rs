@@ -156,14 +156,15 @@ fn flatten(
             } else {
                 format!("{parent_path}/{name}").into()
             };
-            let total = child
-                .file
-                .and_then(|fi| files.get(fi as usize))
-                .map_or(Totals::ZERO, |f| Totals {
-                    files: 1,
-                    tokens: file_tokens(f),
-                    bytes: f.size_bytes,
-                });
+            let total =
+                child
+                    .file
+                    .and_then(|fi| files.get(fi as usize))
+                    .map_or(Totals::ZERO, |f| Totals {
+                        files: 1,
+                        tokens: file_tokens(f),
+                        bytes: f.size_bytes,
+                    });
             nodes.push(Node {
                 name: name.as_str().into(),
                 path: path.clone(),
@@ -225,10 +226,10 @@ impl FlatTree {
         // single reverse pass rolls the totals up.
         for i in (0..nodes.len()).rev() {
             let (parent, total) = (nodes[i].parent, nodes[i].total);
-            if parent != NO_PARENT {
-                if let Some(p) = nodes.get_mut(parent as usize) {
-                    p.total = p.total.add(total);
-                }
+            if parent != NO_PARENT
+                && let Some(p) = nodes.get_mut(parent as usize)
+            {
+                p.total = p.total.add(total);
             }
         }
         for node in &mut nodes {
@@ -398,10 +399,10 @@ impl FlatTree {
         for i in (0..n).rev() {
             if matched[i] {
                 let p = self.nodes[i].parent;
-                if p != NO_PARENT {
-                    if let Some(flag) = matched.get_mut(p as usize) {
-                        *flag = true;
-                    }
+                if p != NO_PARENT
+                    && let Some(flag) = matched.get_mut(p as usize)
+                {
+                    *flag = true;
                 }
             }
         }
@@ -511,10 +512,11 @@ impl FlatTree {
         }
         for i in (start..end).rev() {
             let (parent, selected) = (self.nodes[i].parent, self.nodes[i].selected);
-            if parent != NO_PARENT && (parent as usize) >= start {
-                if let Some(p) = self.nodes.get_mut(parent as usize) {
-                    p.selected = p.selected.add(selected);
-                }
+            if parent != NO_PARENT
+                && (parent as usize) >= start
+                && let Some(p) = self.nodes.get_mut(parent as usize)
+            {
+                p.selected = p.selected.add(selected);
             }
         }
 
@@ -545,12 +547,11 @@ impl FlatTree {
     pub fn into_selected(self) -> Vec<RepoFile> {
         let mut keep = vec![false; self.files.len()];
         for node in &self.nodes {
-            if let Some(fi) = node.file {
-                if node.selected.files > 0 {
-                    if let Some(flag) = keep.get_mut(fi as usize) {
-                        *flag = true;
-                    }
-                }
+            if let Some(fi) = node.file
+                && node.selected.files > 0
+                && let Some(flag) = keep.get_mut(fi as usize)
+            {
+                *flag = true;
             }
         }
         self.files
@@ -609,12 +610,12 @@ mod tests {
     fn assert_invariants(tree: &FlatTree) {
         let n = tree.nodes.len();
         let mut expect = vec![Totals::ZERO; n];
-        for i in 0..n {
+        for (i, slot) in expect.iter_mut().enumerate().take(n) {
             if tree.nodes[i].is_dir() {
                 continue;
             }
             if tree.nodes[i].selected.files > 0 {
-                expect[i] = tree.nodes[i].total;
+                *slot = tree.nodes[i].total;
             }
         }
         for i in (0..n).rev() {
@@ -624,9 +625,9 @@ mod tests {
                 expect[p as usize] = expect[p as usize].add(e);
             }
         }
-        for i in 0..n {
+        for (i, expected) in expect.iter().enumerate().take(n) {
             assert_eq!(
-                tree.nodes[i].selected, expect[i],
+                tree.nodes[i].selected, *expected,
                 "selected aggregate mismatch at {}",
                 tree.nodes[i].path
             );
@@ -695,7 +696,10 @@ mod tests {
         tree.toggle_selection(x);
 
         assert_eq!(tree.selection(x), Selection::Unselected);
-        assert_eq!(tree.selection(idx_of(&tree, "crates/a")), Selection::Partial);
+        assert_eq!(
+            tree.selection(idx_of(&tree, "crates/a")),
+            Selection::Partial
+        );
         assert_eq!(tree.selection(idx_of(&tree, "crates")), Selection::Partial);
         assert_eq!(tree.selection(idx_of(&tree, "src")), Selection::Selected);
         assert_eq!(tree.selected().tokens, 190);
@@ -715,7 +719,11 @@ mod tests {
         tree.toggle_selection(crates);
 
         for p in ["crates", "crates/a", "crates/a/x.rs", "crates/b/z.rs"] {
-            assert_eq!(tree.selection(idx_of(&tree, p)), Selection::Unselected, "{p}");
+            assert_eq!(
+                tree.selection(idx_of(&tree, p)),
+                Selection::Unselected,
+                "{p}"
+            );
         }
         assert_eq!(tree.selected().tokens, 120);
         assert_eq!(tree.selected().files, 3);
@@ -739,7 +747,10 @@ mod tests {
         assert_eq!(rows(&tree).len(), 5);
 
         tree.toggle_selection(crates);
-        assert_eq!(tree.selection(idx_of(&tree, "crates/b/z.rs")), Selection::Unselected);
+        assert_eq!(
+            tree.selection(idx_of(&tree, "crates/b/z.rs")),
+            Selection::Unselected
+        );
         assert_invariants(&tree);
     }
 
@@ -754,7 +765,10 @@ mod tests {
         assert!(tree.set_expanded(a, true));
         assert_eq!(rows(&tree), ["0a", "1b", "1d.rs", "0e.rs"]);
         assert!(!tree.set_expanded(a, true), "no-op reports false");
-        assert!(!tree.set_expanded(idx_of(&tree, "e.rs"), true), "files cannot expand");
+        assert!(
+            !tree.set_expanded(idx_of(&tree, "e.rs"), true),
+            "files cannot expand"
+        );
         assert_eq!(tree.selected(), tree.total());
     }
 
@@ -805,8 +819,14 @@ mod tests {
 
         // Only x.rs is in scope and it is selected -> toggling deselects just x.rs.
         tree.toggle_selection(a);
-        assert_eq!(tree.selection(idx_of(&tree, "crates/a/x.rs")), Selection::Unselected);
-        assert_eq!(tree.selection(idx_of(&tree, "crates/a/y.rs")), Selection::Selected);
+        assert_eq!(
+            tree.selection(idx_of(&tree, "crates/a/x.rs")),
+            Selection::Unselected
+        );
+        assert_eq!(
+            tree.selection(idx_of(&tree, "crates/a/y.rs")),
+            Selection::Selected
+        );
         assert_eq!(tree.selection(a), Selection::Partial);
         assert_invariants(&tree);
 
@@ -843,7 +863,10 @@ mod tests {
         tree.toggle_all(); // deselect the two src files only
         assert_eq!(tree.selected().files, 4);
         assert_eq!(tree.selection(idx_of(&tree, "src")), Selection::Unselected);
-        assert_eq!(tree.selection(idx_of(&tree, "Cargo.toml")), Selection::Selected);
+        assert_eq!(
+            tree.selection(idx_of(&tree, "Cargo.toml")),
+            Selection::Selected
+        );
         assert_invariants(&tree);
     }
 
@@ -856,12 +879,20 @@ mod tests {
             .into_iter()
             .map(|f| f.relative_path.to_string_lossy().into_owned())
             .collect();
-        assert_eq!(out, ["Cargo.toml", "crates/b/z.rs", "src/lib.rs", "src/main.rs"]);
+        assert_eq!(
+            out,
+            ["Cargo.toml", "crates/b/z.rs", "src/lib.rs", "src/main.rs"]
+        );
     }
 
     #[test]
     fn missing_token_counts_fall_back_to_a_byte_estimate() {
-        let file = RepoFile::new(PathBuf::from("a.txt"), PathBuf::from("/a.txt"), 41, String::new());
+        let file = RepoFile::new(
+            PathBuf::from("a.txt"),
+            PathBuf::from("/a.txt"),
+            41,
+            String::new(),
+        );
         let tree = FlatTree::new(vec![file], 1);
         assert_eq!(tree.total().tokens, 11); // ceil(41 / 4)
     }
@@ -881,7 +912,13 @@ mod tests {
     #[test]
     fn many_random_toggles_keep_aggregates_consistent() {
         let files: Vec<_> = (0..200)
-            .map(|i| rf(&format!("d{}/s{}/f{}.rs", i % 5, i % 7, i), i + 1, (i as u64 + 1) * 10))
+            .map(|i| {
+                rf(
+                    &format!("d{}/s{}/f{}.rs", i % 5, i % 7, i),
+                    i + 1,
+                    (i as u64 + 1) * 10,
+                )
+            })
             .collect();
         let mut tree = FlatTree::new(files, 1);
         let n = tree.nodes.len();

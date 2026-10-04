@@ -3,7 +3,7 @@ mod cli;
 use clap::Parser;
 use cli::Cli;
 use color_eyre::eyre::{self, Context};
-use repox_core::{format_repository, scan_repository, TokenCounter};
+use repox_core::{TokenCounter, format_repository, scan_repository};
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::time::Instant;
@@ -79,7 +79,10 @@ fn main() -> eyre::Result<()> {
                 }
                 return Ok(());
             }
-            repox_tui::TuiOutcome::Selected { action, files: selected } => {
+            repox_tui::TuiOutcome::Selected {
+                action,
+                files: selected,
+            } => {
                 if selected.is_empty() {
                     if !cli.quiet {
                         eprintln!("No files selected.");

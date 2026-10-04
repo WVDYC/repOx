@@ -78,7 +78,8 @@ pub fn render(frame: &mut Frame, app: &mut App) {
 
     let (tree_area, preview_area) = if main.width >= MIN_SPLIT_WIDTH {
         let [left, right] =
-            Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)]).areas(main);
+            Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)])
+                .areas(main);
         (left, Some(right))
     } else {
         (main, None)
@@ -283,10 +284,7 @@ fn tail_fit(path: &str, max: usize) -> (&str, bool) {
         return (path, false);
     }
     let skip = count - max.saturating_sub(1).min(count);
-    let start = path
-        .char_indices()
-        .nth(skip)
-        .map_or(path.len(), |(i, _)| i);
+    let start = path.char_indices().nth(skip).map_or(path.len(), |(i, _)| i);
     (&path[start..], true)
 }
 
@@ -323,8 +321,10 @@ fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, conte
         let row = total - app.preview_scroll;
         if row < rows {
             let y = inner.y + u16::try_from(row).unwrap_or(0);
-            Writer::new(buf, inner.x + 1, y, inner.right())
-                .put("… preview truncated (file is larger than 256 KB)", Style::new().fg(Color::Yellow));
+            Writer::new(buf, inner.x + 1, y, inner.right()).put(
+                "… preview truncated (file is larger than 256 KB)",
+                Style::new().fg(Color::Yellow),
+            );
         }
     }
 
@@ -396,13 +396,20 @@ fn draw_filter_bar(buf: &mut Buffer, area: Rect, app: &App) {
     let matches = app.tree.filter_match_count();
     let no_matches = app.tree.filter_active() && matches == 0;
     if app.tree.filter_active() {
-        let _ = write!(count, "{matches} match{} ", if matches == 1 { "" } else { "es" });
+        let _ = write!(
+            count,
+            "{matches} match{} ",
+            if matches == 1 { "" } else { "es" }
+        );
     }
     let count_w = u16::try_from(count.len()).unwrap_or(0);
     let count_x = area.right().saturating_sub(count_w);
 
     let mut w = Writer::new(buf, area.x + 1, area.y, count_x.max(area.x + 1));
-    w.put("/ ", Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+    w.put(
+        "/ ",
+        Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+    );
     w.put(&app.query, Style::new());
     if app.mode == Mode::Filter {
         w.put("█", Style::new().fg(ACCENT));
@@ -479,7 +486,10 @@ fn draw_metrics(buf: &mut Buffer, row: Rect, app: &App) {
     w.put(&app.options.model_name, Style::new().fg(ACCENT));
     w.put("]", DIM_STYLE);
     if ratio > 1.0 {
-        w.put(" OVER LIMIT", Style::new().fg(Color::Red).add_modifier(Modifier::BOLD));
+        w.put(
+            " OVER LIMIT",
+            Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
+        );
     }
 
     // Payload size.
@@ -512,7 +522,10 @@ const FILTER_HINTS: &[(&str, &str)] = &[
 fn draw_hints(buf: &mut Buffer, row: Rect, app: &App) {
     let mut w = Writer::new(buf, row.x + 1, row.y, row.right());
     if let Some(message) = app.message {
-        w.put(message, Style::new().fg(Color::Red).add_modifier(Modifier::BOLD));
+        w.put(
+            message,
+            Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
+        );
         return;
     }
     let hints = if app.mode == Mode::Filter {
@@ -554,7 +567,11 @@ mod tests {
             vec![
                 rf("Cargo.toml", 100, "[package]\nname = \"demo\"\n"),
                 rf("src/lib.rs", 18_000, "fn a() {}\n\tfn tabbed() {}\n"),
-                rf("src/main.rs", 320, "fn main() {\n    println!(\"hi\");\n}\n"),
+                rf(
+                    "src/main.rs",
+                    320,
+                    "fn main() {\n    println!(\"hi\");\n}\n",
+                ),
             ],
             TuiOptions::new("Claude 3.5 Sonnet", 200_000),
         )
@@ -569,7 +586,11 @@ mod tests {
         terminal.draw(|f| render(f, app)).expect("draw");
         let buffer = terminal.backend().buffer().clone();
         (0..height)
-            .map(|y| (0..width).map(|x| buffer[(x, y)].symbol().to_owned()).collect::<String>())
+            .map(|y| {
+                (0..width)
+                    .map(|x| buffer[(x, y)].symbol().to_owned())
+                    .collect::<String>()
+            })
             .collect()
     }
 
@@ -583,7 +604,10 @@ mod tests {
         let screen = draw(&mut app, 110, 24);
 
         assert!(contains(&screen, " Files "));
-        assert!(contains(&screen, "▾ [x] src/"), "folder row with checkbox and arrow");
+        assert!(
+            contains(&screen, "▾ [x] src/"),
+            "folder row with checkbox and arrow"
+        );
         assert!(contains(&screen, "[x] main.rs"));
         assert!(contains(&screen, "3/3 files"));
         assert!(contains(&screen, "18,420 / 200,000 tokens (9.2%)"));
@@ -614,7 +638,10 @@ mod tests {
         let screen = draw(&mut app, 110, 24);
 
         assert!(contains(&screen, "1 │ fn a() {}"));
-        assert!(contains(&screen, "2 │     fn tabbed() {}"), "tab became 4 spaces");
+        assert!(
+            contains(&screen, "2 │     fn tabbed() {}"),
+            "tab became 4 spaces"
+        );
         assert!(contains(&screen, "src/lib.rs"), "path in the pane title");
     }
 
@@ -679,7 +706,10 @@ mod tests {
         press(&mut app, KeyCode::Down);
         let screen = draw(&mut app, 50, 16);
         assert!(contains(&screen, "[x] main.rs"));
-        assert!(!contains(&screen, "1 │ fn a()"), "no preview below the split threshold");
+        assert!(
+            !contains(&screen, "1 │ fn a()"),
+            "no preview below the split threshold"
+        );
     }
 
     #[test]

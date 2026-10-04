@@ -279,7 +279,10 @@ impl App {
 
     fn scroll_preview(&mut self, direction: isize) {
         let page = (self.preview_rows / 2).max(1) as isize;
-        let max = self.preview.line_count().saturating_sub(self.preview_rows.max(1));
+        let max = self
+            .preview
+            .line_count()
+            .saturating_sub(self.preview_rows.max(1));
         self.preview_scroll = self
             .preview_scroll
             .saturating_add_signed(direction * page)
@@ -446,10 +449,16 @@ mod tests {
         // Default expand depth is 2 -> `crates` and `crates/a` are open.
         press(&mut app, KeyCode::Char('h'));
         assert_eq!(hovered_path(&app), "crates");
-        assert!(!visible_paths(&app).contains(&"crates/a".to_string()), "collapsed");
+        assert!(
+            !visible_paths(&app).contains(&"crates/a".to_string()),
+            "collapsed"
+        );
 
         press(&mut app, KeyCode::Char('l'));
-        assert!(visible_paths(&app).contains(&"crates/a".to_string()), "expanded");
+        assert!(
+            visible_paths(&app).contains(&"crates/a".to_string()),
+            "expanded"
+        );
         assert_eq!(hovered_path(&app), "crates", "expanding keeps the cursor");
 
         press(&mut app, KeyCode::Char('l')); // already open -> first child
@@ -468,7 +477,11 @@ mod tests {
     #[test]
     fn enter_toggles_folders_and_outputs_on_files() {
         let mut app = app();
-        assert_eq!(press(&mut app, KeyCode::Enter), None, "folder: toggles expansion");
+        assert_eq!(
+            press(&mut app, KeyCode::Enter),
+            None,
+            "folder: toggles expansion"
+        );
         assert!(!visible_paths(&app).contains(&"crates/a".to_string()));
         press(&mut app, KeyCode::Enter);
         assert!(visible_paths(&app).contains(&"crates/a".to_string()));
@@ -506,7 +519,11 @@ mod tests {
         assert_eq!(app.handle_key(ctrl_c), Some(Exit::Abort));
 
         press(&mut app, KeyCode::Char('/'));
-        assert_eq!(app.handle_key(ctrl_c), Some(Exit::Abort), "also while typing a filter");
+        assert_eq!(
+            app.handle_key(ctrl_c),
+            Some(Exit::Abort),
+            "also while typing a filter"
+        );
     }
 
     #[test]
@@ -533,7 +550,10 @@ mod tests {
 
         assert_eq!(hovered_path(&app), "src/main.rs");
         let rows = visible_paths(&app);
-        assert!(rows.contains(&"src".to_string()), "ancestors stay for context");
+        assert!(
+            rows.contains(&"src".to_string()),
+            "ancestors stay for context"
+        );
         assert!(!rows.contains(&"Cargo.toml".to_string()));
         assert!(app.filter_bar_visible());
 
@@ -564,8 +584,16 @@ mod tests {
         assert_eq!(press(&mut app, KeyCode::Esc), None, "first Esc clears");
         assert!(!app.tree.filter_active());
         assert!(app.query.is_empty());
-        assert_eq!(hovered_path(&app), "src/lib.rs", "cursor stays on the same file");
-        assert_eq!(press(&mut app, KeyCode::Esc), Some(Exit::Abort), "second Esc quits");
+        assert_eq!(
+            hovered_path(&app),
+            "src/lib.rs",
+            "cursor stays on the same file"
+        );
+        assert_eq!(
+            press(&mut app, KeyCode::Esc),
+            Some(Exit::Abort),
+            "second Esc quits"
+        );
     }
 
     #[test]

@@ -52,7 +52,8 @@ impl Preview {
             // A trailing newline does not start another (empty) line.
             if *byte == b'\n' && i + 1 < end {
                 // `end <= 256 KiB`, so this always fits in a u32.
-                self.line_starts.push(u32::try_from(i + 1).unwrap_or(u32::MAX));
+                self.line_starts
+                    .push(u32::try_from(i + 1).unwrap_or(u32::MAX));
             }
         }
     }

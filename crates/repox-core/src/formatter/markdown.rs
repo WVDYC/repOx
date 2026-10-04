@@ -22,7 +22,8 @@ fn calculate_fence(content: &str) -> String {
 
 /// Formats the repository files into standard Markdown with language-tagged code blocks.
 pub fn format_markdown(files: &[RepoFile]) -> String {
-    let mut output = String::with_capacity(files.iter().map(|f| f.content.len() + 128).sum::<usize>() + 2048);
+    let mut output =
+        String::with_capacity(files.iter().map(|f| f.content.len() + 128).sum::<usize>() + 2048);
 
     // 1. Repository structure section
     let paths: Vec<_> = files.iter().map(|f| &f.relative_path).collect();

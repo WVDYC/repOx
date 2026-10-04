@@ -16,5 +16,5 @@ pub use domain::{OutputFormat, RepoFile, ScanOptions, ScanSummary, TokenProfile}
 pub use error::{RepoxError, Result};
 pub use formatter::format_repository;
 pub use scanner::scan_repository;
-pub use tokenizer::{count_text_tokens, TokenCounter};
+pub use tokenizer::{TokenCounter, count_text_tokens};
 pub use tree::generate_file_tree;

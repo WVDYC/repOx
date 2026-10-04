@@ -1,7 +1,7 @@
 use crate::domain::{RepoFile, TokenProfile};
 use crate::error::{RepoxError, Result};
 use rayon::prelude::*;
-use tiktoken_rs::{cl100k_base, o200k_base, CoreBPE};
+use tiktoken_rs::{CoreBPE, cl100k_base, o200k_base};
 
 /// Tokenizer wrapper supporting multiple LLM token encoding profiles.
 pub struct TokenCounter {
@@ -108,6 +108,9 @@ mod tests {
 
         assert!(files[0].token_count.is_some());
         assert!(files[1].token_count.is_some());
-        assert_eq!(total, files[0].token_count.unwrap() + files[1].token_count.unwrap());
+        assert_eq!(
+            total,
+            files[0].token_count.unwrap() + files[1].token_count.unwrap()
+        );
     }
 }

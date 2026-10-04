@@ -131,10 +131,10 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
 
         Box::new(move |entry_result| match entry_result {
             Ok(entry) => {
-                if let Some(file_type) = entry.file_type() {
-                    if file_type.is_file() {
-                        collector.push(entry.into_path());
-                    }
+                if let Some(file_type) = entry.file_type()
+                    && file_type.is_file()
+                {
+                    collector.push(entry.into_path());
                 }
                 WalkState::Continue
             }
@@ -170,16 +170,16 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
             }
 
             // User-specified glob filters
-            if let Some(ref exclude) = exclude_matcher {
-                if exclude.is_match(&relative_path) {
-                    return None;
-                }
+            if let Some(ref exclude) = exclude_matcher
+                && exclude.is_match(&relative_path)
+            {
+                return None;
             }
 
-            if let Some(ref include) = include_matcher {
-                if !include.is_match(&relative_path) {
-                    return None;
-                }
+            if let Some(ref include) = include_matcher
+                && !include.is_match(&relative_path)
+            {
+                return None;
             }
 
             // File size check
@@ -192,16 +192,16 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
             };
 
             let file_size = metadata.len();
-            if let Some(limit) = max_size {
-                if file_size > limit {
-                    tracing::debug!(
-                        "Skipping {} due to size limit ({} > {})",
-                        relative_path.display(),
-                        file_size,
-                        limit
-                    );
-                    return None;
-                }
+            if let Some(limit) = max_size
+                && file_size > limit
+            {
+                tracing::debug!(
+                    "Skipping {} due to size limit ({} > {})",
+                    relative_path.display(),
+                    file_size,
+                    limit
+                );
+                return None;
             }
 
             // Read file bytes
@@ -227,12 +227,7 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 }
             };
 
-            Some(RepoFile::new(
-                relative_path,
-                full_path,
-                file_size,
-                content,
-            ))
+            Some(RepoFile::new(relative_path, full_path, file_size, content))
         })
         .collect();
 

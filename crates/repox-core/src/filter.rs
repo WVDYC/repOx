@@ -210,6 +210,8 @@ mod tests {
         assert!(should_skip_path(&PathBuf::from("nested/.env")));
         assert!(should_skip_path(&PathBuf::from("Cargo.lock")));
         assert!(should_skip_path(&PathBuf::from("icons/app.svg")));
-        assert!(!should_skip_path(&PathBuf::from("crates/repox-core/src/lib.rs")));
+        assert!(!should_skip_path(&PathBuf::from(
+            "crates/repox-core/src/lib.rs"
+        )));
     }
 }
