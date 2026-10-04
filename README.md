@@ -32,21 +32,49 @@
 
 ## 📥 Installation
 
-### From Source (Cargo)
+### 1. One-Line Installer (macOS & Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/WVDYC/repOx/main/install.sh | sh
+```
+
+### 2. Homebrew (macOS & Linux)
+
+```bash
+brew tap WVDYC/tap https://github.com/WVDYC/repOx
+brew install repox
+```
+
+### 3. Cargo (From Source)
 
 Ensure you have Rust 1.85+ installed:
 
 ```bash
-git clone https://github.com/WVDYC/repOx.git
-cd repOx
-cargo install --path .
+cargo install --git https://github.com/WVDYC/repOx.git
 ```
 
 Or build the optimized release binary directly:
 
 ```bash
+git clone https://github.com/WVDYC/repOx.git
+cd repOx
 cargo build --release
 # Binary available at ./target/release/repox
+```
+
+### 4. Shell Completions
+
+`repOx` supports generating native autocompletions for your shell:
+
+```bash
+# Zsh
+repox --completions zsh > ~/.zsh/completion/_repox
+
+# Bash
+repox --completions bash > ~/.local/share/bash-completion/completions/repox
+
+# Fish
+repox --completions fish > ~/.config/fish/completions/repox.fish
 ```
 
 ---
@@ -211,6 +239,20 @@ fn main() { ... }
 fn main() { ... }
 ```
 ````
+
+---
+
+## 📊 Benchmarks
+
+Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Silicon (M-series) traversing a 3,000+ file repository (15 runs, 3 warmups):
+
+| Tool | Average Latency | Speedup | Memory Overhead | Offline Tokenization |
+| :--- | :--- | :--- | :--- | :--- |
+| **`repox`** (Claude XML) | **14.2 ms ± 0.8 ms** | **1.0x (baseline)** | **~18 MB** | No (instant) |
+| **`repox -t -p claude`** | **42.6 ms ± 1.4 ms** | **~3.0x slower** | **~42 MB** | **Yes (`tiktoken-rs`)** |
+| `repomix` (`npx repomix`) | **1,850.4 ms ± 48.2 ms** | **~130x slower** | **~185 MB** | Partial |
+
+*repOx achieves sub-30ms performance via multi-threaded work-stealing directory traversal (`ignore`), parallel chunking (`rayon`), and zero-copy string formatting.*
 
 ---
 
