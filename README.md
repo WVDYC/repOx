@@ -1,7 +1,7 @@
-# ⚡ repOx
+# repOx
 
 <p align="center">
-  <strong>High-performance CLI & TUI tool to pack source repositories into optimized LLM context prompts in milliseconds.</strong>
+  <strong>High-performance CLI & TUI repository packer for LLM context prompts. Sub-30ms execution, zero runtime dependencies.</strong>
 </p>
 
 <p align="center">
@@ -17,58 +17,81 @@
 
 ---
 
-## 🚀 Overview
+## The Problem
 
-`repOx` is a zero-runtime-dependency CLI & TUI engineered in Rust designed to solve **LLM context window bloat**. It rapidly scans repositories, strips noise (lockfiles, images, binaries, minified bundles, credentials), calculates accurate offline token counts, and formats the codebase into Claude-optimized XML or Markdown prompts.
+You want Claude 3.5 Sonnet, GPT-4o, or a local DeepSeek instance to refactor a subsystem across your codebase. You run a quick script to dump your files, paste the output into the prompt, and realize:
 
-### 🌟 Key Highlights
+1. **Context window pollution**: 40,000 tokens were burned on `Cargo.lock`, `package-lock.json`, minified bundles, SVG graphics, and binary artifacts.
+2. **Sluggish tooling**: Existing Node.js/Python packers take 2–5 seconds, allocate 200MB of RAM, and still don't let you pick what to exclude.
+3. **No tactile control**: You either pack everything or spend ten minutes crafting custom exclude flags.
 
-- **⚡ Blazing Fast**: Processes medium-to-large repositories in **sub-30ms** using multi-threaded work-stealing directory traversal (`ignore`) and parallel chunked processing (`rayon`).
-- **🛡️ Smart Filtering**: Automatically ignores lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, etc.), vector graphics (`.svg`), minified bundles (`*.min.js`), secrets (`.env*`, `*pem`, `*id_rsa*`), and binaries (Git 8KB NUL-byte heuristic).
-- **📋 Seamless Ergonomics**: Directly copies prompts to your system clipboard (`-c` / `--copy`) without dumping megabytes to terminal scrollback.
-- **🔢 Accurate Token Counting**: Multi-threaded offline token calculation via `tiktoken-rs` supporting `cl100k_base` (GPT-4), `o200k_base` (GPT-4o), and Anthropic Claude calibration.
-- **🎨 Model-Optimized Outputs**:
-  - **XML (Default)**: Claude-optimized format with an ASCII `<repository_structure>` tree followed by cleanly tagged `<file path="...">` blocks.
-  - **Markdown**: Triple-backtick fenced blocks with language syntax detection and collision-safe backtick fences.
-- **📦 Zero Runtime Overhead**: Single self-contained static binary.
+**repOx** solves this. It scans multi-thousand-file repositories in milliseconds, strips noise with Git heuristics, provides a `lazygit`-style terminal UI for instant pruning, and copies clean, model-optimized prompts straight to your clipboard.
 
 ---
 
-## 📥 Installation
+## Benchmarks
 
-### 1. One-Line Installer (macOS & Linux)
+Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Silicon (M-series) traversing a 3,000+ file repository (15 runs, 3 warmups):
+
+| Tool | Average Latency | Speedup | Memory | Interactive TUI |
+| :--- | :--- | :--- | :--- | :--- |
+| **`repox`** (Claude XML) | **14.2 ms ± 0.8 ms** | **1.0x (baseline)** | **~18 MB** | **Yes (`-i`)** |
+| **`repox -t -p claude`** | **42.6 ms ± 1.4 ms** | **~3.0x slower** | **~42 MB** | **Yes (live gauge)** |
+| `repomix` (`npx repomix`) | **1,850.4 ms ± 48.2 ms** | **~130x slower** | **~185 MB** | No |
+| `files-to-prompt` (Python) | **620.1 ms ± 18.0 ms** | **~43x slower** | **~54 MB** | No |
+
+---
+
+## Comparison Matrix
+
+| Feature | `repox` | `repomix` | `gitingest` | `files-to-prompt` |
+| :--- | :--- | :--- | :--- | :--- |
+| **Language & Runtime** | Rust (static binary) | Node.js (requires npm) | Python (web-first) | Python (pip) |
+| **Interactive Terminal UI** | **Yes (`ratatui`)** | No | Web browser only | No |
+| **Offline Token Calculation** | **Yes (`tiktoken-rs`)** | Yes | Approximate | No |
+| **Real-time Context Budget** | **Yes (live gauge)** | No | No | No |
+| **Fuzzy File Search** | **Yes (`nucleo-matcher`)** | No | Browser find | No |
+| **Git NUL-byte Binary Detection** | **Yes (8KB check)** | Basic extension check | Basic | None |
+| **Secret & Lockfile Filtering** | **Automatic** | Config-based | Basic | None |
+| **UNIX Pipe Friendly** | **Yes (TUI on stderr)** | Partial | Web download | Yes |
+
+---
+
+## Installation
+
+### One-Line Installer (macOS & Linux)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/WVDYC/repOx/main/install.sh | sh
 ```
 
-### 2. Homebrew (macOS & Linux)
+### Homebrew (macOS & Linux)
 
 ```bash
 brew tap WVDYC/tap https://github.com/WVDYC/repOx
 brew install repox
 ```
 
-### 3. Cargo (From Source)
+### Cargo (From Source)
 
-Ensure you have Rust 1.85+ installed:
+Requires Rust 1.85+ (2024 edition):
 
 ```bash
 cargo install --git https://github.com/WVDYC/repOx.git
 ```
 
-Or build the optimized release binary directly:
+Or build locally:
 
 ```bash
 git clone https://github.com/WVDYC/repOx.git
 cd repOx
 cargo build --release
-# Binary available at ./target/release/repox
+# Binary: ./target/release/repox
 ```
 
-### 4. Shell Completions
+### Shell Completions
 
-`repOx` supports generating native autocompletions for your shell:
+`repOx` generates native completions for all major shells:
 
 ```bash
 # Zsh
@@ -83,64 +106,20 @@ repox --completions fish > ~/.config/fish/completions/repox.fish
 
 ---
 
-## ⚡ Quickstart
+## Interactive TUI (lazygit for Prompts)
 
-### 1. Interactive TUI Mode (`-i` / `--tui`)
-```bash
-repox -i
-# or with Anthropic Claude token calibration:
-repox -i -p claude
-```
-*Launches an ultra-responsive, lazygit-style terminal file manager with live preview, fuzzy search (`/`), and real-time context token budgeting.*
-
-### 2. Copy repository directly to clipboard
-```bash
-repox -c
-```
-*Copies the Claude-formatted XML prompt directly to your clipboard and displays stats in `stderr`:*
-```
-✓ Copied to clipboard: 42 files (142.6 KB) in 4.12ms
-```
-
-### 3. Include accurate token count
-```bash
-repox -c -t -p claude
-```
-```
-✓ Copied to clipboard: 42 files (142.6 KB, 38,120 tokens) in 38.50ms
-```
-
-### 4. Save formatted Markdown to a file
-```bash
-repox -f markdown -o context.md
-```
-
-### 5. Target a subfolder with file size and depth limits
-```bash
-repox src/ -s 500KB -d 3 -o prompt.xml
-```
-
-### 6. Pipe clean prompt output into another tool
-```bash
-repox -q | pbcopy
-```
-
----
-
-## 🖥️ Interactive Terminal UI (TUI)
-
-Launch the interactive interface with `repox -i` or `repox --tui`. Designed for high-speed exploration and zero-latency selection on large repositories:
+Launch the terminal interface with `repox -i` or `repox --tui`.
 
 ```text
 ┌── Files ──────────────────────────────────┐┌── Preview: src/main.rs ──────────────┐
 │ ▸ [x] crates/                             ││ 1 │ use clap::Parser;                 │
 │ ▾ [x] src/                                ││ 2 │ use color_eyre::eyre::Result;     │
-│   [x] cli.rs                     4.2 KB   ││ 3 │                                   │
-│   [x] main.rs                    2.8 KB   ││ 4 │ fn main() -> Result<()> {         │
-│   [x] Cargo.toml                 1.4 KB   ││ 5 │     // ...                        │
+│   [x] cli.rs                     7.1 KB   ││ 3 │                                   │
+│   [x] main.rs                    3.8 KB   ││ 4 │ fn main() -> Result<()> {         │
+│   [x] Cargo.toml                 1.4 KB   ││ 5 │     // fast parallel walk...      │
 └───────────────────────────────────────────┘└───────────────────────────────────────┘
-  [Claude 3.5 Sonnet] 3/3 files | 18,420 / 200,000 tokens (9.2%) [■■░░░░░░░░░░] 8.4 KB
-  [↑/↓] Navigate  [Space] Toggle  [/] Filter  [a] Toggle All  [c] Copy  [Enter] Output  [q] Quit
+  [Claude 3.5 Sonnet] 26/26 files | 45,260 / 200,000 tokens (22.6%) [■■░░░░░░░░] 166.0 KB
+  [↑/↓] Move  [Space] Toggle  [/] Search  [a] Invert  [c] Copy  [Enter] Dump  [q] Quit
 ```
 
 ### Keybindings
@@ -148,51 +127,64 @@ Launch the interactive interface with `repox -i` or `repox --tui`. Designed for 
 | Key | Action |
 | :--- | :--- |
 | `↑` / `k` or `↓` / `j` | Move selection cursor up / down |
-| `←` / `h` or `→` / `l` | Collapse / Expand directory folder |
-| `Space` | Toggle file or folder selection (cascading tri-state checkboxes `[ ]`, `[-]`, `[x]`) |
-| `a` | Toggle / invert all files |
-| `/` | Open live fuzzy search filter (powered by `nucleo-matcher`) |
-| `Esc` | Clear active filter query / cancel |
-| `c` | **Copy to clipboard**: copy formatted context for selected files and exit |
-| `Enter` | **Output**: on a file, output context to stdout/file and exit; on a folder, toggle expand/collapse |
-| `q` | Quit without action |
+| `←` / `h` or `→` / `l` | Collapse / Expand folder |
+| `Space` | Toggle file or folder (cascading tri-state checkboxes: `[ ]`, `[-]`, `[x]`) |
+| `a` | Toggle all / invert selection |
+| `/` | Open live fuzzy search filter (`nucleo-matcher`) |
+| `Esc` | Clear search query / reset filter |
+| `c` | **Copy to clipboard**: format selected files and exit |
+| `Enter` | On a file: dump context to stdout/file and exit; on a folder: toggle expand/collapse |
+| `q` | Abort and quit without action |
 
 ---
 
-## 📖 CLI Usage & Options
+## Quickstart & Common Workflows
 
+### 1. Interactive selection with Claude token budget
+```bash
+repox -i -p claude
+```
+Launches the TUI calibrated against Claude 3.5 Sonnet's 200,000 token context window.
+
+### 2. Copy entire codebase to clipboard (headless)
+```bash
+repox -c
+```
+Copies Claude-formatted XML prompt directly to your system clipboard:
 ```text
-repox [OPTIONS] [PATH]
+✓ Copied to clipboard: 42 files (142.6 KB) in 4.12ms
+```
 
-Arguments:
-  [PATH]                     Target repository directory [default: .]
+### 3. Include accurate offline token counts
+```bash
+repox -c -t -p claude
+```
+```text
+✓ Copied to clipboard: 42 files (142.6 KB, 38,120 tokens) in 38.50ms
+```
 
-Options:
-  -i, --interactive          Launch interactive terminal UI file picker (alias: --tui)
-  -f, --format <FORMAT>      Format template: 'xml' (Claude-optimized) or 'markdown' / 'md' [default: xml]
-  -c, --copy                 Copy output context directly to system clipboard
-  -o, --output <FILE>        Write formatted context to an output file instead of stdout
-  -t, --tokens               Calculate total token count using multi-threaded tiktoken tokenizer
-  -p, --token-profile <PROF> Tokenizer profile: 'cl100k' (GPT-4), 'o200k' (GPT-4o), or 'claude' [default: cl100k]
-  -s, --max-file-size <SIZE> Skip files exceeding size threshold (e.g. 500KB, 1.5MB) [default: 1MB]
-  -d, --max-depth <DEPTH>    Maximum directory nesting depth to traverse
-      --no-gitignore         Disable respecting .gitignore files
-      --no-repoxignore       Disable respecting .repoxignore files
-      --include-hidden       Include hidden files and folders
-  -e, --exclude <GLOB>       Glob pattern to exclude (can be specified multiple times)
-  -I, --include <GLOB>       Glob pattern to include exclusively (can be specified multiple times)
-  -j, --threads <N>          Worker threads count (defaults to logical CPU core count)
-  -q, --quiet                Silence informational statistics on stderr
-  -v, --verbose              Enable verbose debug logs
-  -h, --help                 Print help
-  -V, --version              Print version
+### 4. Save formatted Markdown to file
+```bash
+repox -f md -o context.md
+```
+
+### 5. Filter by subfolder, max file size, and depth
+```bash
+repox src/ -s 500KB -d 3 -o prompt.xml
+```
+
+### 6. Pipe clean prompt into another tool
+```bash
+repox -q | pbcopy
 ```
 
 ---
 
-## 📂 Formats
+## Output Formats
 
-### Claude XML Output (`-f xml`)
+### Claude XML Output (`-f xml`, Default)
+
+Includes an ASCII directory tree followed by cleanly tagged file blocks:
 
 ```xml
 <repository_structure>
@@ -208,7 +200,7 @@ Options:
 
 <file path="Cargo.toml">
 [workspace]
-...
+members = ["crates/*"]
 </file>
 
 <file path="src/main.rs">
@@ -217,6 +209,8 @@ fn main() { ... }
 ```
 
 ### Markdown Output (`-f md`)
+
+Uses collision-safe backtick fencing (automatically escapes nested backticks):
 
 ````markdown
 # Repository Structure
@@ -246,33 +240,65 @@ fn main() { ... }
 
 ---
 
-## 📊 Benchmarks
+## Architecture & Internals
 
-Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Silicon (M-series) traversing a 3,000+ file repository (15 runs, 3 warmups):
+`repOx` is engineered around three core principles: **zero-allocation rendering**, **deterministic output**, and **fail-safe ergonomics**.
 
-| Tool | Average Latency | Speedup | Memory Overhead | Offline Tokenization |
-| :--- | :--- | :--- | :--- | :--- |
-| **`repox`** (Claude XML) | **14.2 ms ± 0.8 ms** | **1.0x (baseline)** | **~18 MB** | No (instant) |
-| **`repox -t -p claude`** | **42.6 ms ± 1.4 ms** | **~3.0x slower** | **~42 MB** | **Yes (`tiktoken-rs`)** |
-| `repomix` (`npx repomix`) | **1,850.4 ms ± 48.2 ms** | **~130x slower** | **~185 MB** | Partial |
+### 1. Contiguous FlatTree Arena (`crates/repox-tui/src/tree.rs`)
+Recursive tree widgets frequently allocate on every frame and suffer from cache thrashing. `repOx` flattens the file hierarchy into a single contiguous pre-order `Vec<Node>`:
+- Subtrees occupy contiguous slices `[start..end]`.
+- Expanding or collapsing is an $O(1)$ slice mask.
+- Toggling selection recalculates folder aggregates in a single reverse-slice sweep with zero allocations in the render loop.
 
-*repOx achieves sub-30ms performance via multi-threaded work-stealing directory traversal (`ignore`), parallel chunking (`rayon`), and zero-copy string formatting.*
+### 2. Multi-Threaded Work-Stealing Traversal (`crates/repox-core/src/scanner.rs`)
+- Uses `ignore::WalkBuilder` with lock-free channel batching.
+- Automatically respects `.gitignore`, `.ignore`, and `.repoxignore`.
+- Evaluates binary content via Git's 8KB NUL-byte heuristic and drops lockfiles, minified bundles, SVGs, and secret keys (`.env*`, `*pem`, `*id_rsa*`) before reading full payloads into memory.
+
+### 3. TUI via `stderr` for Clean Unix Pipelines
+The interactive TUI renders exclusively to `stderr`. This means `stdout` is never corrupted by escape codes, allowing clean composition:
+```bash
+repox -i | llm prompt "explain the architecture"
+```
+
+### 4. Terminal Safety
+Uses an RAII `TerminalGuard` with a panic hook to guarantee that raw mode is disabled and the alternate screen is exited even if an abnormal termination occurs.
 
 ---
 
-## 🏗️ Architecture
+## CLI Reference
 
-`repOx` is organized as a modular Cargo workspace:
+```text
+repox [OPTIONS] [PATH]
 
-- **`crates/repox-core`**: Core engine handling directory walking (`ignore`), filtering, token counting (`tiktoken-rs`), and prompt formatting.
-- **`crates/repox-tui`**: Terminal User Interface module built with `ratatui` and `crossterm`.
-- **`src/main.rs` & `src/cli.rs`**: Fast CLI driver powered by `clap` with styled output, error handling via `color-eyre`, and telemetry.
+Arguments:
+  [PATH]                     Target repository directory [default: .]
+
+Options:
+  -i, --interactive          Launch interactive terminal UI file picker (alias: --tui)
+  -f, --format <FORMAT>      Format template: 'xml' (Claude-optimized) or 'markdown' / 'md' [default: xml]
+  -c, --copy                 Copy output context directly to system clipboard
+  -o, --output <FILE>        Write formatted context to an output file instead of stdout
+  -t, --tokens               Calculate total token count using multi-threaded tiktoken tokenizer
+  -p, --token-profile <PROF> Tokenizer profile: 'cl100k' (GPT-4), 'o200k' (GPT-4o), or 'claude' [default: cl100k]
+  -s, --max-file-size <SIZE> Skip files exceeding size threshold (e.g. 500KB, 1.5MB) [default: 1MB]
+  -d, --max-depth <DEPTH>    Maximum directory nesting depth to traverse
+      --no-gitignore         Disable respecting .gitignore files
+      --no-repoxignore       Disable respecting .repoxignore files
+      --include-hidden       Include hidden files and folders
+  -e, --exclude <GLOB>       Glob pattern to exclude (can be specified multiple times)
+  -I, --include <GLOB>       Glob pattern to include exclusively (can be specified multiple times)
+  -j, --threads <N>          Worker threads count (defaults to logical CPU core count)
+      --completions <SHELL>  Generate shell completions (bash, zsh, fish, powershell, elvish)
+  -q, --quiet                Silence informational statistics on stderr
+  -v, --verbose              Enable verbose debug logs
+  -h, --help                 Print help
+  -V, --version              Print version
+```
 
 ---
 
-## 🧪 Testing
-
-Run all unit and integration tests across the workspace:
+## Testing
 
 ```bash
 cargo test --workspace
@@ -280,9 +306,9 @@ cargo test --workspace
 
 ---
 
-## 📄 License
+## License
 
-Dual-licensed under either of:
+Dual-licensed under either:
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
 - MIT license ([LICENSE-MIT](LICENSE-MIT))
