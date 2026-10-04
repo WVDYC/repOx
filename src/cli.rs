@@ -104,7 +104,7 @@ pub struct Cli {
         long = "token-profile",
         default_value = "cl100k",
         value_name = "PROFILE",
-        help = "Tokenizer profile: 'claude' (3.7/3.5), 'o1' / 'o3' / 'gpt4o', 'deepseek', 'gemini', 'cl100k'"
+        help = "Tokenizer profile: 'fable', 'luna', 'claude', 'o1', 'deepseek', 'gemini', 'cl100k'"
     )]
     pub token_profile: TokenProfile,
 

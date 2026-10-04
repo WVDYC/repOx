@@ -13,12 +13,13 @@ impl TokenCounter {
     /// Creates a new `TokenCounter` for the specified `TokenProfile`.
     pub fn new(profile: TokenProfile) -> Result<Self> {
         let bpe = match profile {
-            TokenProfile::Cl100kBase | TokenProfile::Claude => cl100k_base()
+            TokenProfile::Cl100kBase | TokenProfile::Claude | TokenProfile::Fable => cl100k_base()
                 .map_err(|e| RepoxError::Tokenizer(format!("Failed to load cl100k_base: {e}")))?,
-            TokenProfile::O200kBase | TokenProfile::DeepSeek | TokenProfile::Gemini => {
-                o200k_base()
-                    .map_err(|e| RepoxError::Tokenizer(format!("Failed to load o200k_base: {e}")))?
-            }
+            TokenProfile::O200kBase
+            | TokenProfile::DeepSeek
+            | TokenProfile::Gemini
+            | TokenProfile::Luna => o200k_base()
+                .map_err(|e| RepoxError::Tokenizer(format!("Failed to load o200k_base: {e}")))?,
         };
 
         Ok(Self { profile, bpe })
@@ -29,9 +30,9 @@ impl TokenCounter {
         let base_count = self.bpe.encode_with_special_tokens(text).len();
 
         match self.profile {
-            TokenProfile::Cl100kBase | TokenProfile::O200kBase => base_count,
-            TokenProfile::Claude => {
-                // Anthropic Claude tokenizer empirical calibration (~1.08x cl100k baseline for code & technical prompts)
+            TokenProfile::Cl100kBase | TokenProfile::O200kBase | TokenProfile::Luna => base_count,
+            TokenProfile::Claude | TokenProfile::Fable => {
+                // Anthropic Claude & Fable tokenizer empirical calibration
                 ((base_count as f64) * 1.08).round() as usize
             }
             TokenProfile::DeepSeek => {
@@ -107,6 +108,20 @@ mod tests {
     fn test_tokenizer_gemini() {
         let text = "fn main() {\n    println!(\"Hello, Gemini!\");\n}";
         let count = count_text_tokens(text, TokenProfile::Gemini).unwrap();
+        assert!(count > 0);
+    }
+
+    #[test]
+    fn test_tokenizer_fable() {
+        let text = "fn main() {\n    println!(\"Hello, Claude Fable!\");\n}";
+        let count = count_text_tokens(text, TokenProfile::Fable).unwrap();
+        assert!(count > 0);
+    }
+
+    #[test]
+    fn test_tokenizer_luna() {
+        let text = "fn main() {\n    println!(\"Hello, GPT Luna!\");\n}";
+        let count = count_text_tokens(text, TokenProfile::Luna).unwrap();
         assert!(count > 0);
     }
 

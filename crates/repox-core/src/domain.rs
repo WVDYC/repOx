@@ -116,6 +116,10 @@ pub enum TokenProfile {
     DeepSeek,
     /// Google Gemini profile (Gemini 2.0 / 2.5 Pro & Flash, 1M context).
     Gemini,
+    /// Anthropic Claude Fable profile (Fable 5 / 5.1 Mythos-class, 1M context).
+    Fable,
+    /// OpenAI GPT Luna profile (GPT-5.6 / GPT-6 Luna, 1.05M context).
+    Luna,
 }
 
 impl TokenProfile {
@@ -127,6 +131,8 @@ impl TokenProfile {
             Self::Claude => "Claude 3.7 / 3.5 Sonnet",
             Self::DeepSeek => "DeepSeek V3 / R1",
             Self::Gemini => "Gemini 2.0 / 2.5 (1M)",
+            Self::Fable => "Claude Fable 5.1 (1M)",
+            Self::Luna => "GPT-6 Luna (1.05M)",
         }
     }
 
@@ -138,6 +144,8 @@ impl TokenProfile {
             Self::Claude => 200_000,
             Self::DeepSeek => 128_000,
             Self::Gemini => 1_000_000,
+            Self::Fable => 1_000_000,
+            Self::Luna => 1_050_000,
         }
     }
 }
@@ -154,10 +162,12 @@ impl std::str::FromStr for TokenProfile {
             "claude" | "claude37" | "claude-3.7" | "claude35" | "claude-3.5" | "anthropic" => {
                 Ok(Self::Claude)
             }
+            "fable" | "fable5" | "fable-5" | "fable51" | "claude-fable" => Ok(Self::Fable),
+            "luna" | "gpt-luna" | "gpt6-luna" | "gpt-6-luna" | "gpt5-luna" => Ok(Self::Luna),
             "deepseek" | "r1" | "v3" | "deepseek-r1" | "deepseek-v3" => Ok(Self::DeepSeek),
             "gemini" | "gemini2" | "gemini-2.0" | "gemini-2.5" | "google" => Ok(Self::Gemini),
             other => Err(format!(
-                "Unknown token profile '{other}'. Supported: claude, o1, o3-mini, gpt4o, deepseek, gemini, cl100k"
+                "Unknown token profile '{other}'. Supported: fable, luna, claude, o1, o3-mini, gpt4o, deepseek, gemini"
             )),
         }
     }
