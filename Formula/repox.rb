@@ -31,6 +31,9 @@ class Repox < Formula
 
   def install
     bin.install "repox"
+    bash_completion.install "completions/repox.bash" => "repox"
+    zsh_completion.install "completions/_repox" => "_repox"
+    fish_completion.install "completions/repox.fish"
   end
 
   def caveats

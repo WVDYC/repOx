@@ -65,6 +65,7 @@ jobs:
           staging="repox-${{ github.ref_name }}-${{ matrix.target }}"
           mkdir -p "$staging"
           cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} "$staging/"
+          cp -r completions "$staging/"
           cp README.md LICENSE-MIT LICENSE-APACHE "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
@@ -76,6 +77,7 @@ jobs:
           $staging = "repox-${{ github.ref_name }}-${{ matrix.target }}"
           New-Item -ItemType Directory -Path $staging
           Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" -Destination $staging/
+          Copy-Item "completions" -Destination $staging/ -Recurse
           Copy-Item "README.md", "LICENSE-MIT", "LICENSE-APACHE" -Destination $staging/
           Compress-Archive -Path "$staging/*" -DestinationPath "$staging.zip"
           $hash = (Get-FileHash -Algorithm SHA256 "$staging.zip").Hash.ToLower()
