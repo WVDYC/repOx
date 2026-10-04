@@ -18,7 +18,8 @@ impl TokenCounter {
             TokenProfile::O200kBase
             | TokenProfile::DeepSeek
             | TokenProfile::Gemini
-            | TokenProfile::Luna => o200k_base()
+            | TokenProfile::Luna
+            | TokenProfile::Llama => o200k_base()
                 .map_err(|e| RepoxError::Tokenizer(format!("Failed to load o200k_base: {e}")))?,
         };
 
@@ -30,7 +31,10 @@ impl TokenCounter {
         let base_count = self.bpe.encode_with_special_tokens(text).len();
 
         match self.profile {
-            TokenProfile::Cl100kBase | TokenProfile::O200kBase | TokenProfile::Luna => base_count,
+            TokenProfile::Cl100kBase
+            | TokenProfile::O200kBase
+            | TokenProfile::Luna
+            | TokenProfile::Llama => base_count,
             TokenProfile::Claude | TokenProfile::Fable => {
                 // Anthropic Claude & Fable tokenizer empirical calibration
                 ((base_count as f64) * 1.08).round() as usize
@@ -122,6 +126,13 @@ mod tests {
     fn test_tokenizer_luna() {
         let text = "fn main() {\n    println!(\"Hello, GPT Luna!\");\n}";
         let count = count_text_tokens(text, TokenProfile::Luna).unwrap();
+        assert!(count > 0);
+    }
+
+    #[test]
+    fn test_tokenizer_llama() {
+        let text = "fn main() {\n    println!(\"Hello, Meta Llama!\");\n}";
+        let count = count_text_tokens(text, TokenProfile::Llama).unwrap();
         assert!(count > 0);
     }
 

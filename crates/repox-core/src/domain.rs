@@ -120,6 +120,8 @@ pub enum TokenProfile {
     Fable,
     /// OpenAI GPT Luna profile (GPT-5.6 / GPT-6 Luna, 1.05M context).
     Luna,
+    /// Meta Llama profile (Llama 4 / 3.3, 128k context).
+    Llama,
 }
 
 impl TokenProfile {
@@ -130,9 +132,10 @@ impl TokenProfile {
             Self::O200kBase => "GPT-4o / o1 / o3",
             Self::Claude => "Claude 3.7 / 3.5 Sonnet",
             Self::DeepSeek => "DeepSeek V3 / R1",
-            Self::Gemini => "Gemini 2.0 / 2.5 (1M)",
+            Self::Gemini => "Gemini 3 / 2.5 (1M)",
             Self::Fable => "Claude Fable 5.1 (1M)",
             Self::Luna => "GPT-6 Luna (1.05M)",
+            Self::Llama => "Llama 4 / 3.3 (128k)",
         }
     }
 
@@ -146,6 +149,7 @@ impl TokenProfile {
             Self::Gemini => 1_000_000,
             Self::Fable => 1_000_000,
             Self::Luna => 1_050_000,
+            Self::Llama => 128_000,
         }
     }
 }
@@ -162,12 +166,17 @@ impl std::str::FromStr for TokenProfile {
             "claude" | "claude37" | "claude-3.7" | "claude35" | "claude-3.5" | "anthropic" => {
                 Ok(Self::Claude)
             }
-            "fable" | "fable5" | "fable-5" | "fable51" | "claude-fable" => Ok(Self::Fable),
-            "luna" | "gpt-luna" | "gpt6-luna" | "gpt-6-luna" | "gpt5-luna" => Ok(Self::Luna),
+            "fable" | "fable5" | "fable-5" | "fable51" | "claude-fable" | "mythos" => {
+                Ok(Self::Fable)
+            }
+            "luna" | "gpt-luna" | "gpt6" | "gpt-6" | "gpt6-luna" | "gpt5-luna" | "sol"
+            | "terra" => Ok(Self::Luna),
             "deepseek" | "r1" | "v3" | "deepseek-r1" | "deepseek-v3" => Ok(Self::DeepSeek),
-            "gemini" | "gemini2" | "gemini-2.0" | "gemini-2.5" | "google" => Ok(Self::Gemini),
+            "gemini" | "gemini3" | "gemini-3" | "gemini-3.8" | "gemini38" | "gemini2"
+            | "gemini-2.0" | "gemini-2.5" | "google" => Ok(Self::Gemini),
+            "llama" | "llama4" | "llama-4" | "llama3" | "llama-3" | "meta" => Ok(Self::Llama),
             other => Err(format!(
-                "Unknown token profile '{other}'. Supported: fable, luna, claude, o1, o3-mini, gpt4o, deepseek, gemini"
+                "Unknown token profile '{other}'. Supported: fable, luna, claude, gemini, o1, deepseek, llama"
             )),
         }
     }

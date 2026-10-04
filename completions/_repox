@@ -19,8 +19,8 @@ _repox() {
 '--format=[Format template\: '\''xml'\'' (Claude-optimized) or '\''markdown'\'' / '\''md'\'']:FORMAT:_default' \
 '-o+[Write formatted context to an output file instead of stdout]:FILE:_files' \
 '--output=[Write formatted context to an output file instead of stdout]:FILE:_files' \
-'-p+[Tokenizer profile\: '\''fable'\'', '\''luna'\'', '\''claude'\'', '\''o1'\'', '\''deepseek'\'', '\''gemini'\'', '\''cl100k'\'']:PROFILE:_default' \
-'--token-profile=[Tokenizer profile\: '\''fable'\'', '\''luna'\'', '\''claude'\'', '\''o1'\'', '\''deepseek'\'', '\''gemini'\'', '\''cl100k'\'']:PROFILE:_default' \
+'-p+[Tokenizer profile\: '\''fable'\'', '\''luna'\'', '\''gemini'\'', '\''claude'\'', '\''o1'\'', '\''deepseek'\'', '\''llama'\'', '\''cl100k'\'']:PROFILE:_default' \
+'--token-profile=[Tokenizer profile\: '\''fable'\'', '\''luna'\'', '\''gemini'\'', '\''claude'\'', '\''o1'\'', '\''deepseek'\'', '\''llama'\'', '\''cl100k'\'']:PROFILE:_default' \
 '-s+[Skip files exceeding this size threshold (e.g. 500KB, 1.5MB)]:SIZE:_default' \
 '--max-file-size=[Skip files exceeding this size threshold (e.g. 500KB, 1.5MB)]:SIZE:_default' \
 '-d+[Maximum directory nesting depth to traverse]:DEPTH:_default' \

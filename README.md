@@ -19,7 +19,7 @@
 
 ## The Problem
 
-You want Claude 3.5 Sonnet, GPT-4o, or a local DeepSeek instance to refactor a subsystem across your codebase. You run a quick script to dump your files, paste the output into the prompt, and realize:
+You want Claude Fable, GPT-6 Luna, Gemini 3, or DeepSeek R1 to refactor a subsystem across your codebase. You run a quick script to dump your files, paste the output into the prompt, and realize:
 
 1. **Context window pollution**: 40,000 tokens were burned on `Cargo.lock`, `package-lock.json`, minified bundles, SVG graphics, and binary artifacts.
 2. **Sluggish tooling**: Existing Node.js/Python packers take 2–5 seconds, allocate 200MB of RAM, and still don't let you pick what to exclude.
@@ -118,7 +118,7 @@ Launch the terminal interface with `repox -i` or `repox --tui`.
 │   [x] main.rs                    3.8 KB   ││ 4 │ fn main() -> Result<()> {         │
 │   [x] Cargo.toml                 1.4 KB   ││ 5 │     // fast parallel walk...      │
 └───────────────────────────────────────────┘└───────────────────────────────────────┘
-  [Claude 3.5 Sonnet] 26/26 files | 45,260 / 200,000 tokens (22.6%) [■■░░░░░░░░] 166.0 KB
+  [Claude Fable 5.1 (1M)] 26/26 files | 45,260 / 1,000,000 tokens (4.5%) [■░░░░░░░░░] 166.0 KB
   [↑/↓] Move  [Space] Toggle  [/] Search  [a] Invert  [c] Copy  [Enter] Dump  [q] Quit
 ```
 
@@ -140,11 +140,12 @@ Launch the terminal interface with `repox -i` or `repox --tui`.
 
 ## Quickstart & Common Workflows
 
-### 1. Interactive selection with Claude token budget
+### 1. Interactive selection with live token budgeting
 ```bash
-repox -i -p claude
+repox -i -p fable
+# Also supports: -p luna, -p gemini, -p deepseek, -p o1, -p claude
 ```
-Launches the TUI calibrated against Claude 3.5 Sonnet's 200,000 token context window.
+Launches the TUI calibrated against the target model's context window (e.g. 1,000,000 tokens for Fable/Gemini, 1.05M for Luna).
 
 ### 2. Copy entire codebase to clipboard (headless)
 ```bash

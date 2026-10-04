@@ -1,6 +1,6 @@
 complete -c repox -s f -l format -d 'Format template: \'xml\' (Claude-optimized) or \'markdown\' / \'md\'' -r
 complete -c repox -s o -l output -d 'Write formatted context to an output file instead of stdout' -r -F
-complete -c repox -s p -l token-profile -d 'Tokenizer profile: \'fable\', \'luna\', \'claude\', \'o1\', \'deepseek\', \'gemini\', \'cl100k\'' -r
+complete -c repox -s p -l token-profile -d 'Tokenizer profile: \'fable\', \'luna\', \'gemini\', \'claude\', \'o1\', \'deepseek\', \'llama\', \'cl100k\'' -r
 complete -c repox -s s -l max-file-size -d 'Skip files exceeding this size threshold (e.g. 500KB, 1.5MB)' -r
 complete -c repox -s d -l max-depth -d 'Maximum directory nesting depth to traverse' -r
 complete -c repox -s e -l exclude -d 'Glob pattern to exclude (can be specified multiple times)' -r
