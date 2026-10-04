@@ -11,6 +11,10 @@
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg" alt="License"></a>
 </p>
 
+<p align="center">
+  <img src="assets/demo.gif" alt="repOx Interactive Terminal UI Demo" width="800">
+</p>
+
 ---
 
 ## 🚀 Overview
