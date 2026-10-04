@@ -1,0 +1,19 @@
+[package]
+name = "repox-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core library for repox: repository traversal, filtering, token counting, and formatting"
+
+[dependencies]
+ignore.workspace = true
+globset.workspace = true
+rayon.workspace = true
+tiktoken-rs.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "repox-tui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Terminal UI for repox built with ratatui and crossterm"
+
+[dependencies]
+repox-core.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

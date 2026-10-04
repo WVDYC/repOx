@@ -1,0 +1,62 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/repox-core",
+    "crates/repox-tui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["WVDYC <altemirzhilkibayev@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/WVDYC/repOx"
+description = "High-performance CLI & TUI to pack repositories into LLM context prompts in milliseconds"
+
+[workspace.dependencies]
+repox-core = { path = "crates/repox-core" }
+repox-tui = { path = "crates/repox-tui" }
+
+# CLI & Terminal
+clap = { version = "4.5", features = ["derive", "cargo", "env"] }
+color-eyre = "0.6"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+arboard = "3.4"
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Filesystem & Concurrency
+ignore = "0.4"
+globset = "0.4"
+rayon = "1.10"
+
+# Tokenization
+tiktoken-rs = "0.6"
+
+# Error Handling & Utilities
+thiserror = "2.0"
+tempfile = "3.17"
+
+[package]
+name = "repox"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description.workspace = true
+
+[dependencies]
+repox-core.workspace = true
+repox-tui.workspace = true
+clap.workspace = true
+color-eyre.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+arboard.workspace = true
+rayon.workspace = true
+
+[[bin]]
+name = "repox"
+path = "src/main.rs"
