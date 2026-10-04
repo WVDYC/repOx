@@ -147,7 +147,7 @@ pub struct Cli {
 
     /// Explicit glob pattern(s) to include exclusively.
     #[arg(
-        short = 'i',
+        short = 'I',
         long = "include",
         value_name = "GLOB",
         help = "Glob pattern to include exclusively (can be specified multiple times)"
@@ -164,8 +164,13 @@ pub struct Cli {
     pub threads: Option<usize>,
 
     /// Launch interactive Terminal UI (TUI) for file tree selection.
-    #[arg(long = "tui", help = "Launch interactive terminal UI file picker")]
-    pub tui: bool,
+    #[arg(
+        short = 'i',
+        long = "interactive",
+        alias = "tui",
+        help = "Launch interactive terminal UI file picker (lazygit-style)"
+    )]
+    pub interactive: bool,
 
     /// Suppress stderr diagnostic messages (useful when piping stdout).
     #[arg(
@@ -232,6 +237,19 @@ mod tests {
         assert_eq!(cli.max_file_size, 1024 * 1024);
         assert!(!cli.copy);
         assert!(!cli.tokens);
+        assert!(!cli.interactive);
+    }
+
+    #[test]
+    fn test_cli_interactive_flag() {
+        let cli1 = Cli::try_parse_from(["repox", "-i"]).unwrap();
+        assert!(cli1.interactive);
+
+        let cli2 = Cli::try_parse_from(["repox", "--interactive"]).unwrap();
+        assert!(cli2.interactive);
+
+        let cli3 = Cli::try_parse_from(["repox", "--tui"]).unwrap();
+        assert!(cli3.interactive);
     }
 
     #[test]

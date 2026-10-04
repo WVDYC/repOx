@@ -58,13 +58,47 @@ fn main() -> eyre::Result<()> {
         return Ok(());
     }
 
-    // 2. Launch interactive TUI if requested
-    if cli.tui {
-        files = repox_tui::run_tui(&files).wrap_err("TUI session encountered an error")?;
-    }
+    let mut should_copy = cli.copy;
 
-    // 3. Compute tokens if requested or if copying with stats
-    if cli.tokens {
+    // 2. Launch interactive TUI if requested
+    if cli.interactive {
+        // Pre-calculate token counts so the TUI can display real-time token metrics and gauge
+        let counter = TokenCounter::new(cli.token_profile)
+            .map_err(|e| eyre::eyre!("Failed to initialize token counter: {e}"))?;
+        let _ = counter.count_files_tokens(&mut files);
+
+        let tui_options = repox_tui::TuiOptions::new(
+            cli.token_profile.display_name(),
+            cli.token_profile.context_window(),
+        );
+
+        match repox_tui::run(files, tui_options).wrap_err("TUI session encountered an error")? {
+            repox_tui::TuiOutcome::Cancelled => {
+                if !cli.quiet {
+                    eprintln!("Aborted.");
+                }
+                return Ok(());
+            }
+            repox_tui::TuiOutcome::Selected { action, files: selected } => {
+                if selected.is_empty() {
+                    if !cli.quiet {
+                        eprintln!("No files selected.");
+                    }
+                    return Ok(());
+                }
+                if action == repox_tui::TuiAction::Copy {
+                    should_copy = true;
+                }
+                files = selected;
+            }
+        }
+
+        // Update summary with selected file metrics
+        summary.file_count = files.len();
+        summary.total_bytes = files.iter().map(|f| f.size_bytes).sum();
+        summary.total_tokens = Some(files.iter().map(|f| f.token_count.unwrap_or(0)).sum());
+    } else if cli.tokens {
+        // 3. Compute tokens in non-interactive mode if requested
         let counter = TokenCounter::new(cli.token_profile)
             .map_err(|e| eyre::eyre!("Failed to initialize token counter: {e}"))?;
         let total_tokens = counter.count_files_tokens(&mut files);
@@ -77,7 +111,7 @@ fn main() -> eyre::Result<()> {
     // 5. Output actions
     let mut performed_action = false;
 
-    if cli.copy {
+    if should_copy {
         let mut clipboard = arboard::Clipboard::new()
             .map_err(|e| eyre::eyre!("Failed to access system clipboard: {e}"))?;
         clipboard
@@ -109,7 +143,7 @@ fn main() -> eyre::Result<()> {
             None => String::new(),
         };
 
-        if cli.copy {
+        if should_copy {
             eprintln!(
                 "✓ Copied to clipboard: {} files ({}{}) in {:.2?}",
                 summary.file_count,

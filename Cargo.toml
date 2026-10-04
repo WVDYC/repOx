@@ -23,8 +23,9 @@ color-eyre = "0.6"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 arboard = "3.4"
-ratatui = "0.29"
-crossterm = "0.28"
+ratatui = "0.30"
+crossterm = "0.29"
+nucleo-matcher = "0.3"
 
 # Filesystem & Concurrency
 ignore = "0.4"

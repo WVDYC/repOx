@@ -114,6 +114,25 @@ pub enum TokenProfile {
     Claude,
 }
 
+impl TokenProfile {
+    /// Human-readable name of the model family this profile approximates.
+    pub const fn display_name(self) -> &'static str {
+        match self {
+            Self::Cl100kBase => "GPT-4 Turbo",
+            Self::O200kBase => "GPT-4o",
+            Self::Claude => "Claude 3.5 Sonnet",
+        }
+    }
+
+    /// Context window size (in tokens) of the model family this profile approximates.
+    pub const fn context_window(self) -> usize {
+        match self {
+            Self::Cl100kBase | Self::O200kBase => 128_000,
+            Self::Claude => 200_000,
+        }
+    }
+}
+
 impl std::str::FromStr for TokenProfile {
     type Err = String;
 

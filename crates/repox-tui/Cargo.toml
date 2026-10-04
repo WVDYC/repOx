@@ -5,11 +5,11 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Terminal UI for repox built with ratatui and crossterm"
+description = "Interactive terminal UI for repox: lazygit-style file picker with live token metrics"
 
 [dependencies]
 repox-core.workspace = true
 ratatui.workspace = true
 crossterm.workspace = true
+nucleo-matcher.workspace = true
 thiserror.workspace = true
-tracing.workspace = true
