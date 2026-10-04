@@ -190,6 +190,14 @@ pub struct Cli {
     /// Enable verbose debug logging on stderr.
     #[arg(short = 'v', long = "verbose", help = "Enable verbose debug logs")]
     pub verbose: bool,
+
+    /// Generate shell completions for the specified shell.
+    #[arg(
+        long = "completions",
+        value_name = "SHELL",
+        help = "Generate shell completions (bash, zsh, fish, powershell, elvish)"
+    )]
+    pub completions: Option<clap_complete::Shell>,
 }
 
 impl Cli {
@@ -262,6 +270,12 @@ mod tests {
 
         let cli3 = Cli::try_parse_from(["repox", "--tui"]).unwrap();
         assert!(cli3.interactive);
+    }
+
+    #[test]
+    fn test_cli_completions_flag() {
+        let cli = Cli::try_parse_from(["repox", "--completions", "zsh"]).unwrap();
+        assert_eq!(cli.completions, Some(clap_complete::Shell::Zsh));
     }
 
     #[test]

@@ -1,0 +1,66 @@
+#compdef repox
+
+autoload -U is-at-least
+
+_repox() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-f+[Format template\: '\''xml'\'' (Claude-optimized) or '\''markdown'\'' / '\''md'\'']:FORMAT:_default' \
+'--format=[Format template\: '\''xml'\'' (Claude-optimized) or '\''markdown'\'' / '\''md'\'']:FORMAT:_default' \
+'-o+[Write formatted context to an output file instead of stdout]:FILE:_files' \
+'--output=[Write formatted context to an output file instead of stdout]:FILE:_files' \
+'-p+[Tokenizer profile\: '\''cl100k'\'' (GPT-4), '\''o200k'\'' (GPT-4o), or '\''claude'\'']:PROFILE:_default' \
+'--token-profile=[Tokenizer profile\: '\''cl100k'\'' (GPT-4), '\''o200k'\'' (GPT-4o), or '\''claude'\'']:PROFILE:_default' \
+'-s+[Skip files exceeding this size threshold (e.g. 500KB, 1.5MB)]:SIZE:_default' \
+'--max-file-size=[Skip files exceeding this size threshold (e.g. 500KB, 1.5MB)]:SIZE:_default' \
+'-d+[Maximum directory nesting depth to traverse]:DEPTH:_default' \
+'--max-depth=[Maximum directory nesting depth to traverse]:DEPTH:_default' \
+'*-e+[Glob pattern to exclude (can be specified multiple times)]:GLOB:_default' \
+'*--exclude=[Glob pattern to exclude (can be specified multiple times)]:GLOB:_default' \
+'*-I+[Glob pattern to include exclusively (can be specified multiple times)]:GLOB:_default' \
+'*--include=[Glob pattern to include exclusively (can be specified multiple times)]:GLOB:_default' \
+'-j+[Number of worker threads (defaults to logical CPU core count)]:N:_default' \
+'--threads=[Number of worker threads (defaults to logical CPU core count)]:N:_default' \
+'--completions=[Generate shell completions (bash, zsh, fish, powershell, elvish)]:SHELL:(bash elvish fish powershell zsh)' \
+'-c[Copy output context directly to system clipboard]' \
+'--copy[Copy output context directly to system clipboard]' \
+'-t[Calculate total token count using multi-threaded tiktoken tokenizer]' \
+'--tokens[Calculate total token count using multi-threaded tiktoken tokenizer]' \
+'--no-gitignore[Disable respecting .gitignore files]' \
+'--no-repoxignore[Disable respecting .repoxignore files]' \
+'--include-hidden[Include hidden files and folders]' \
+'-i[Launch interactive terminal UI file picker (lazygit-style)]' \
+'--interactive[Launch interactive terminal UI file picker (lazygit-style)]' \
+'-q[Silence informational statistics on stderr]' \
+'--quiet[Silence informational statistics on stderr]' \
+'-v[Enable verbose debug logs]' \
+'--verbose[Enable verbose debug logs]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::path -- Target repository path or directory to pack:_files' \
+&& ret=0
+}
+
+(( $+functions[_repox_commands] )) ||
+_repox_commands() {
+    local commands; commands=()
+    _describe -t commands 'repox commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_repox" ]; then
+    _repox "$@"
+else
+    compdef _repox repox
+fi

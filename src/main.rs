@@ -31,6 +31,14 @@ fn main() -> eyre::Result<()> {
 
     let cli = Cli::parse();
 
+    // Handle shell completions generation early
+    if let Some(shell) = cli.completions {
+        use clap::CommandFactory;
+        let mut cmd = Cli::command();
+        clap_complete::generate(shell, &mut cmd, "repox", &mut io::stdout());
+        return Ok(());
+    }
+
     // Initialize tracing logger
     let log_level = if cli.verbose {
         "repox=debug,repox_core=debug"
