@@ -105,13 +105,17 @@ impl std::str::FromStr for OutputFormat {
 /// Tokenizer profile for calculating context window consumption.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TokenProfile {
-    /// OpenAI GPT-4 / ChatGPT profile (cl100k_base).
+    /// OpenAI GPT-4 / ChatGPT profile (cl100k_base, 128k context).
     #[default]
     Cl100kBase,
-    /// OpenAI GPT-4o / modern Omni profile (o200k_base).
+    /// OpenAI GPT-4o / o1 / o3-mini modern Omni profile (o200k_base, 200k context).
     O200kBase,
-    /// Anthropic Claude profile (Claude 3 / 3.5 / 3.7 approximate calibration).
+    /// Anthropic Claude profile (Claude 3.7 / 3.5 Sonnet / Haiku, 200k context).
     Claude,
+    /// DeepSeek profile (DeepSeek V3 / R1, 128k context).
+    DeepSeek,
+    /// Google Gemini profile (Gemini 2.0 / 2.5 Pro & Flash, 1M context).
+    Gemini,
 }
 
 impl TokenProfile {
@@ -119,16 +123,21 @@ impl TokenProfile {
     pub const fn display_name(self) -> &'static str {
         match self {
             Self::Cl100kBase => "GPT-4 Turbo",
-            Self::O200kBase => "GPT-4o",
-            Self::Claude => "Claude 3.5 Sonnet",
+            Self::O200kBase => "GPT-4o / o1 / o3",
+            Self::Claude => "Claude 3.7 / 3.5 Sonnet",
+            Self::DeepSeek => "DeepSeek V3 / R1",
+            Self::Gemini => "Gemini 2.0 / 2.5 (1M)",
         }
     }
 
     /// Context window size (in tokens) of the model family this profile approximates.
     pub const fn context_window(self) -> usize {
         match self {
-            Self::Cl100kBase | Self::O200kBase => 128_000,
+            Self::Cl100kBase => 128_000,
+            Self::O200kBase => 200_000,
             Self::Claude => 200_000,
+            Self::DeepSeek => 128_000,
+            Self::Gemini => 1_000_000,
         }
     }
 }
@@ -139,10 +148,16 @@ impl std::str::FromStr for TokenProfile {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "cl100k" | "cl100k_base" | "gpt4" | "gpt-4" => Ok(Self::Cl100kBase),
-            "o200k" | "o200k_base" | "gpt4o" | "gpt-4o" => Ok(Self::O200kBase),
-            "claude" | "anthropic" => Ok(Self::Claude),
+            "o200k" | "o200k_base" | "gpt4o" | "gpt-4o" | "o1" | "o3" | "o3-mini" => {
+                Ok(Self::O200kBase)
+            }
+            "claude" | "claude37" | "claude-3.7" | "claude35" | "claude-3.5" | "anthropic" => {
+                Ok(Self::Claude)
+            }
+            "deepseek" | "r1" | "v3" | "deepseek-r1" | "deepseek-v3" => Ok(Self::DeepSeek),
+            "gemini" | "gemini2" | "gemini-2.0" | "gemini-2.5" | "google" => Ok(Self::Gemini),
             other => Err(format!(
-                "Unknown token profile '{other}'. Supported: cl100k, o200k, claude"
+                "Unknown token profile '{other}'. Supported: claude, o1, o3-mini, gpt4o, deepseek, gemini, cl100k"
             )),
         }
     }

@@ -15,8 +15,10 @@ impl TokenCounter {
         let bpe = match profile {
             TokenProfile::Cl100kBase | TokenProfile::Claude => cl100k_base()
                 .map_err(|e| RepoxError::Tokenizer(format!("Failed to load cl100k_base: {e}")))?,
-            TokenProfile::O200kBase => o200k_base()
-                .map_err(|e| RepoxError::Tokenizer(format!("Failed to load o200k_base: {e}")))?,
+            TokenProfile::O200kBase | TokenProfile::DeepSeek | TokenProfile::Gemini => {
+                o200k_base()
+                    .map_err(|e| RepoxError::Tokenizer(format!("Failed to load o200k_base: {e}")))?
+            }
         };
 
         Ok(Self { profile, bpe })
@@ -31,6 +33,14 @@ impl TokenCounter {
             TokenProfile::Claude => {
                 // Anthropic Claude tokenizer empirical calibration (~1.08x cl100k baseline for code & technical prompts)
                 ((base_count as f64) * 1.08).round() as usize
+            }
+            TokenProfile::DeepSeek => {
+                // DeepSeek V3/R1 BPE tokenization calibration
+                ((base_count as f64) * 1.02).round() as usize
+            }
+            TokenProfile::Gemini => {
+                // Google Gemini tokenization calibration
+                ((base_count as f64) * 1.05).round() as usize
             }
         }
     }
@@ -84,6 +94,20 @@ mod tests {
         let count_cl100k = count_text_tokens(text, TokenProfile::Cl100kBase).unwrap();
         let count_claude = count_text_tokens(text, TokenProfile::Claude).unwrap();
         assert!(count_claude >= count_cl100k);
+    }
+
+    #[test]
+    fn test_tokenizer_deepseek() {
+        let text = "fn main() {\n    println!(\"Hello, DeepSeek!\");\n}";
+        let count = count_text_tokens(text, TokenProfile::DeepSeek).unwrap();
+        assert!(count > 0);
+    }
+
+    #[test]
+    fn test_tokenizer_gemini() {
+        let text = "fn main() {\n    println!(\"Hello, Gemini!\");\n}";
+        let count = count_text_tokens(text, TokenProfile::Gemini).unwrap();
+        assert!(count > 0);
     }
 
     #[test]

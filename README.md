@@ -280,7 +280,7 @@ Options:
   -c, --copy                 Copy output context directly to system clipboard
   -o, --output <FILE>        Write formatted context to an output file instead of stdout
   -t, --tokens               Calculate total token count using multi-threaded tiktoken tokenizer
-  -p, --token-profile <PROF> Tokenizer profile: 'cl100k' (GPT-4), 'o200k' (GPT-4o), or 'claude' [default: cl100k]
+  -p, --token-profile <PROF> Tokenizer profile: 'claude' (Claude 3.7/3.5), 'o1' / 'o3-mini' / 'gpt4o', 'deepseek' (V3/R1), 'gemini' (2.0/2.5), 'cl100k' [default: cl100k]
   -s, --max-file-size <SIZE> Skip files exceeding size threshold (e.g. 500KB, 1.5MB) [default: 1MB]
   -d, --max-depth <DEPTH>    Maximum directory nesting depth to traverse
       --no-gitignore         Disable respecting .gitignore files
