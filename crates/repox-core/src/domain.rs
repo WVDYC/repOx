@@ -86,6 +86,8 @@ pub enum OutputFormat {
     Xml,
     /// Markdown format: triple-backtick fenced blocks with language syntax hints.
     Markdown,
+    /// Synthetic tool-call format: array of tool response messages (read_file outputs) for agent harnesses.
+    ToolCall,
 }
 
 impl std::str::FromStr for OutputFormat {
@@ -95,8 +97,9 @@ impl std::str::FromStr for OutputFormat {
         match s.to_ascii_lowercase().as_str() {
             "xml" => Ok(Self::Xml),
             "markdown" | "md" => Ok(Self::Markdown),
+            "tool-call" | "toolcall" | "tool" | "tools" | "json" => Ok(Self::ToolCall),
             other => Err(format!(
-                "Unknown format '{other}'. Supported formats: xml, markdown (md)"
+                "Unknown format '{other}'. Supported formats: xml, markdown (md), tool-call (tool/json)"
             )),
         }
     }
@@ -205,6 +208,8 @@ pub struct ScanOptions {
     pub include_patterns: Vec<String>,
     /// Number of worker threads for parallel file traversal and reading.
     pub threads: usize,
+    /// Extract architectural outline/signatures instead of full implementation bodies.
+    pub outline: bool,
 }
 
 impl Default for ScanOptions {
@@ -222,6 +227,7 @@ impl Default for ScanOptions {
             threads: std::thread::available_parallelism()
                 .map(|p| p.get())
                 .unwrap_or(4),
+            outline: false,
         }
     }
 }
@@ -271,6 +277,11 @@ impl ScanOptions {
 
     pub fn with_threads(mut self, threads: usize) -> Self {
         self.threads = if threads == 0 { 1 } else { threads };
+        self
+    }
+
+    pub fn with_outline(mut self, outline: bool) -> Self {
+        self.outline = outline;
         self
     }
 }

@@ -63,13 +63,13 @@ pub struct Cli {
     #[arg(default_value = ".", value_name = "PATH")]
     pub path: PathBuf,
 
-    /// Output format for the generated prompt (xml, markdown / md).
+    /// Output format for the generated prompt (xml, markdown / md, tool-call / json).
     #[arg(
         short = 'f',
         long = "format",
         default_value = "xml",
         value_name = "FORMAT",
-        help = "Format template: 'xml' (Claude-optimized) or 'markdown' / 'md'"
+        help = "Format template: 'xml' (Claude), 'markdown' / 'md', or 'tool-call' (agent JSON)"
     )]
     pub format: OutputFormat,
 
@@ -198,6 +198,14 @@ pub struct Cli {
         help = "Generate shell completions (bash, zsh, fish, powershell, elvish)"
     )]
     pub completions: Option<clap_complete::Shell>,
+
+    /// Extract architectural outline/signatures only (strip implementation bodies).
+    #[arg(
+        long = "outline",
+        alias = "signatures-only",
+        help = "Extract architecture signatures and type outlines only (strips function bodies)"
+    )]
+    pub outline: bool,
 }
 
 impl Cli {
@@ -224,6 +232,7 @@ impl Cli {
             exclude_patterns: self.exclude.clone(),
             include_patterns: self.include.clone(),
             threads,
+            outline: self.outline,
         }
     }
 }
@@ -308,5 +317,18 @@ mod tests {
         assert_eq!(cli.max_depth, Some(3));
         assert!(cli.no_gitignore);
         assert_eq!(cli.exclude, vec!["*.test.ts"]);
+    }
+
+    #[test]
+    fn test_cli_tool_call_format_and_outline() {
+        let cli = Cli::try_parse_from(["repox", "-f", "tool-call", "--outline"]).unwrap();
+        assert_eq!(cli.format, OutputFormat::ToolCall);
+        assert!(cli.outline);
+        let scan_opts = cli.to_scan_options();
+        assert!(scan_opts.outline);
+
+        let cli_json = Cli::try_parse_from(["repox", "-f", "json", "--signatures-only"]).unwrap();
+        assert_eq!(cli_json.format, OutputFormat::ToolCall);
+        assert!(cli_json.outline);
     }
 }
