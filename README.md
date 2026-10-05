@@ -186,6 +186,18 @@ repox src/ -s 500KB -d 3 -o prompt.xml
 repox -q | pbcopy
 ```
 
+### 7. Architectural Outline / Signatures Only (`--outline`)
+```bash
+repox --outline -c
+```
+Extracts type definitions, traits, interfaces, and function signatures while stripping implementation bodies into `{ /* ... */ }`. Compresses multi-thousand-line codebases into compact token budgets (~90% token reduction) ideal for system architecture planning and LLM codebase mapping.
+
+### 8. Synthetic Tool-Call Output (`-f tool-call`)
+```bash
+repox -f tool-call -c
+```
+Formats files as an array of JSON `read_file` tool responses. Perfect for agent harnesses (Ollama, OpenAI, Anthropic message loops) where models treat tool outputs as authoritative ground truth.
+
 ---
 
 ## Output Formats
@@ -245,6 +257,22 @@ Uses collision-safe backtick fencing (automatically escapes nested backticks):
 fn main() { ... }
 ```
 ````
+
+### Synthetic Tool-Call Output (`-f tool-call` / `-f json`)
+
+Outputs an authoritative JSON array formatted as tool responses for agent harnesses:
+
+```json
+[
+  {
+    "role": "tool",
+    "tool_call_id": "call_read_file_1",
+    "name": "read_file",
+    "path": "src/main.rs",
+    "content": "fn main() { ... }"
+  }
+]
+```
 
 ---
 

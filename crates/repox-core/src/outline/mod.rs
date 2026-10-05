@@ -16,8 +16,8 @@ pub fn extract_outline(source: &str, language_hint: &str) -> String {
     match language_hint {
         "rust" => rust::extract_rust_outline(source),
         "python" => python::extract_python_outline(source),
-        "go" | "typescript" | "javascript" | "tsx" | "jsx" | "c" | "cpp" | "java"
-        | "kotlin" | "swift" | "csharp" => generic_c::extract_generic_c_outline(source, language_hint),
+        "go" | "typescript" | "javascript" | "tsx" | "jsx" | "c" | "cpp" | "java" | "kotlin"
+        | "swift" | "csharp" => generic_c::extract_generic_c_outline(source, language_hint),
         _ => source.to_string(),
     }
 }

@@ -86,7 +86,9 @@ pub fn extract_rust_outline(source: &str) -> String {
         // Track general brace depth for non-skipped lines
         let open_braces = line.chars().filter(|&c| c == '{').count();
         let close_braces = line.chars().filter(|&c| c == '}').count();
-        current_brace_depth = current_brace_depth.saturating_add(open_braces).saturating_sub(close_braces);
+        current_brace_depth = current_brace_depth
+            .saturating_add(open_braces)
+            .saturating_sub(close_braces);
 
         out.push_str(line);
         out.push('\n');
@@ -114,7 +116,10 @@ fn is_rust_fn_declaration(trimmed: &str) -> bool {
     ];
 
     prefixes.iter().any(|prefix| trimmed.starts_with(prefix))
-        || (trimmed.contains(" fn ") && (trimmed.starts_with('#') || trimmed.starts_with("/*") || !trimmed.starts_with("//")))
+        || (trimmed.contains(" fn ")
+            && (trimmed.starts_with('#')
+                || trimmed.starts_with("/*")
+                || !trimmed.starts_with("//")))
 }
 
 #[cfg(test)]

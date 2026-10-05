@@ -70,7 +70,9 @@ pub fn extract_generic_c_outline(source: &str, lang: &str) -> String {
 
         let open_braces = line.chars().filter(|&c| c == '{').count();
         let close_braces = line.chars().filter(|&c| c == '}').count();
-        current_brace_depth = current_brace_depth.saturating_add(open_braces).saturating_sub(close_braces);
+        current_brace_depth = current_brace_depth
+            .saturating_add(open_braces)
+            .saturating_sub(close_braces);
 
         out.push_str(line);
         out.push('\n');
@@ -88,8 +90,14 @@ fn is_generic_function_declaration(trimmed: &str, lang: &str) -> bool {
                 || trimmed.starts_with("export function ")
                 || trimmed.starts_with("async function ")
                 || trimmed.starts_with("export async function ")
-                || (trimmed.contains(" => ") && (trimmed.starts_with("const ") || trimmed.starts_with("export const ")))
-                || (trimmed.ends_with('{') && (trimmed.starts_with("constructor(") || (trimmed.contains('(') && !trimmed.starts_with("class ") && !trimmed.starts_with("interface ") && !trimmed.starts_with("type "))))
+                || (trimmed.contains(" => ")
+                    && (trimmed.starts_with("const ") || trimmed.starts_with("export const ")))
+                || (trimmed.ends_with('{')
+                    && (trimmed.starts_with("constructor(")
+                        || (trimmed.contains('(')
+                            && !trimmed.starts_with("class ")
+                            && !trimmed.starts_with("interface ")
+                            && !trimmed.starts_with("type "))))
         }
         "c" | "cpp" | "java" | "kotlin" | "swift" | "csharp" => {
             (trimmed.ends_with('{') || trimmed.contains('('))

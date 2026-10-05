@@ -159,10 +159,19 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
     let mut accepted_files: Vec<RepoFile> = paths
         .into_par_iter()
         .filter_map(|full_path| {
-            let relative_path = full_path
-                .strip_prefix(root_ref)
-                .unwrap_or(&full_path)
-                .to_path_buf();
+            let relative_path = match full_path.strip_prefix(root_ref) {
+                Ok(p) if !p.as_os_str().is_empty() => p.to_path_buf(),
+                _ => {
+                    if full_path.is_file() {
+                        full_path
+                            .file_name()
+                            .map(PathBuf::from)
+                            .unwrap_or_else(|| full_path.clone())
+                    } else {
+                        full_path.clone()
+                    }
+                }
+            };
 
             // Default heuristic skip rules (lockfiles, svgs, minified, secrets, binary extensions)
             if should_skip_path(&relative_path) {
@@ -228,7 +237,12 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
             };
 
             let (final_content, final_size) = if options.outline {
-                let dummy_file = RepoFile::new(relative_path.clone(), full_path.clone(), file_size, String::new());
+                let dummy_file = RepoFile::new(
+                    relative_path.clone(),
+                    full_path.clone(),
+                    file_size,
+                    String::new(),
+                );
                 let lang = dummy_file.language_hint();
                 let outline_text = crate::outline::extract_outline(&content, lang);
                 let outline_len = outline_text.len() as u64;
@@ -237,7 +251,12 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 (content, file_size)
             };
 
-            Some(RepoFile::new(relative_path, full_path, final_size, final_content))
+            Some(RepoFile::new(
+                relative_path,
+                full_path,
+                final_size,
+                final_content,
+            ))
         })
         .collect();
 
@@ -369,7 +388,11 @@ impl User {
 
         assert_eq!(files.len(), 1);
         assert!(files[0].content.contains("pub struct User"));
-        assert!(files[0].content.contains("pub fn new(id: u64) -> Self { /* ... */ }"));
+        assert!(
+            files[0]
+                .content
+                .contains("pub fn new(id: u64) -> Self { /* ... */ }")
+        );
         assert!(!files[0].content.contains("let computed = id * 2;"));
     }
 }
