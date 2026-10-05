@@ -5,9 +5,10 @@
 </p>
 
 <p align="center">
+  <a href="https://crates.io/crates/repox-cli"><img src="https://img.shields.io/crates/v/repox-cli.svg" alt="Crates.io"></a>
+  <a href="https://crates.io/crates/repox-cli"><img src="https://img.shields.io/crates/d/repox-cli.svg" alt="Downloads"></a>
   <a href="https://github.com/WVDYC/repOx/actions"><img src="https://img.shields.io/badge/build-passing-brightgreen.svg" alt="Build Status"></a>
-  <a href="https://crates.io"><img src="https://img.shields.io/badge/rust-2024_edition-orange.svg" alt="Rust 2024"></a>
-  <a href="#benchmarks"><img src="https://img.shields.io/badge/speed-sub--30ms-blueviolet.svg" alt="Speed"></a>
+  <a href="#benchmarks"><img src="https://img.shields.io/badge/speed-sub--15ms-blueviolet.svg" alt="Speed"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg" alt="License"></a>
 </p>
 
@@ -58,6 +59,12 @@ Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Sili
 ---
 
 ## Installation
+
+### Via Cargo (Recommended)
+
+```bash
+cargo install repox-cli
+```
 
 ### One-Line Installer (macOS & Linux)
 
