@@ -12,10 +12,13 @@ authors = ["WVDYC <altemirzhilkibayev@gmail.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/WVDYC/repOx"
 description = "High-performance CLI & TUI to pack repositories into LLM context prompts in milliseconds"
+readme = "README.md"
+keywords = ["cli", "tui", "llm", "prompt", "packer"]
+categories = ["command-line-utilities", "development-tools"]
 
 [workspace.dependencies]
-repox-core = { path = "crates/repox-core" }
-repox-tui = { path = "crates/repox-tui" }
+repox-core = { path = "crates/repox-core", version = "0.1.0" }
+repox-tui = { path = "crates/repox-tui", version = "0.1.0" }
 
 # CLI & Terminal
 clap = { version = "4.5", features = ["derive", "cargo", "env"] }
@@ -41,13 +44,16 @@ thiserror = "2.0"
 tempfile = "3.17"
 
 [package]
-name = "repox"
+name = "repox-cli"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 description.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
 repox-core.workspace = true
