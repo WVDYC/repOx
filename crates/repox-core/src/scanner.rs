@@ -227,7 +227,17 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 }
             };
 
-            Some(RepoFile::new(relative_path, full_path, file_size, content))
+            let (final_content, final_size) = if options.outline {
+                let dummy_file = RepoFile::new(relative_path.clone(), full_path.clone(), file_size, String::new());
+                let lang = dummy_file.language_hint();
+                let outline_text = crate::outline::extract_outline(&content, lang);
+                let outline_len = outline_text.len() as u64;
+                (outline_text, outline_len)
+            } else {
+                (content, file_size)
+            };
+
+            Some(RepoFile::new(relative_path, full_path, final_size, final_content))
         })
         .collect();
 
@@ -332,5 +342,34 @@ mod tests {
 
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].relative_path, PathBuf::from("small.txt"));
+    }
+
+    #[test]
+    fn test_scan_repository_outline_mode() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+
+        let rust_code = r#"
+pub struct User {
+    pub id: u64,
+}
+
+impl User {
+    pub fn new(id: u64) -> Self {
+        let computed = id * 2;
+        Self { id: computed }
+    }
+}
+"#;
+        let rs_file = root.join("user.rs");
+        fs::write(&rs_file, rust_code).unwrap();
+
+        let options = ScanOptions::new(root).with_outline(true);
+        let (files, _) = scan_repository(&options).unwrap();
+
+        assert_eq!(files.len(), 1);
+        assert!(files[0].content.contains("pub struct User"));
+        assert!(files[0].content.contains("pub fn new(id: u64) -> Self { /* ... */ }"));
+        assert!(!files[0].content.contains("let computed = id * 2;"));
     }
 }
