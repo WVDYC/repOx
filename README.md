@@ -43,12 +43,17 @@ Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Sili
 
 ---
 
-## Comparison Matrix
+## Comparison Matrix & v0.2.0 Features
 
-| Feature | `repox` | `repomix` | `gitingest` | `files-to-prompt` |
+| Feature | `repox` (v0.2.0) | `repomix` | `gitingest` | `files-to-prompt` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Language & Runtime** | Rust (static binary) | Node.js (requires npm) | Python (web-first) | Python (pip) |
-| **Interactive Terminal UI** | **Yes (`ratatui`)** | No | Web browser only | No |
+| **Interactive Terminal UI** | **Yes (`ratatui` + syntax highlighting)** | No | Web browser only | No |
+| **Architectural Signature Extraction** | **Yes (`--outline` / `--signatures-only`)** | Experimental | No | No |
+| **Synthetic Agent Tool-Call Output** | **Yes (`-f tool-call` / `-f json`)** | No | No | No |
+| **Smart Lockfile Summarizer** | **Yes (`--summary-locks`)** | No | No | No |
+| **Git-Aware Diff Context Packing** | **Yes (`-m, --modified`, `--staged`)** | No | No | No |
+| **SSH / Tmux Clipboard Fallback** | **Yes (`arboard` + OSC 52)** | No | N/A | No |
 | **Offline Token Calculation** | **Yes (`tiktoken-rs`)** | Yes | Approximate | No |
 | **Real-time Context Budget** | **Yes (live gauge)** | No | No | No |
 | **Fuzzy File Search** | **Yes (`nucleo-matcher`)** | No | Browser find | No |
@@ -115,7 +120,7 @@ repox --completions fish > ~/.config/fish/completions/repox.fish
 
 ## Interactive TUI (lazygit for Prompts)
 
-Launch the terminal interface with `repox -i` or `repox --tui`.
+Launch the terminal interface with `repox -i` or `repox --tui`. Features zero-allocation rendering, lexical syntax highlighting in the live preview pane, and native + OSC 52 SSH/tmux clipboard integration.
 
 ```text
 ┌── Files ──────────────────────────────────┐┌── Preview: src/main.rs ──────────────┐
@@ -126,7 +131,7 @@ Launch the terminal interface with `repox -i` or `repox --tui`.
 │   [x] Cargo.toml                 1.4 KB   ││ 5 │     // fast parallel walk...      │
 └───────────────────────────────────────────┘└───────────────────────────────────────┘
   [Claude Fable 5.1 (1M)] 26/26 files | 45,260 / 1,000,000 tokens (4.5%) [■░░░░░░░░░] 166.0 KB
-  [↑/↓] Move  [Space] Toggle  [/] Search  [a] Invert  [c] Copy  [Enter] Dump  [q] Quit
+  [↑/↓] Move  [Space] Toggle  [/] Search  [a] Invert  [c] Copy  [C] CLI Cmd  [Enter] Dump  [q] Quit
 ```
 
 ### Keybindings
@@ -139,7 +144,8 @@ Launch the terminal interface with `repox -i` or `repox --tui`.
 | `a` | Toggle all / invert selection |
 | `/` | Open live fuzzy search filter (`nucleo-matcher`) |
 | `Esc` | Clear search query / reset filter |
-| `c` | **Copy to clipboard**: format selected files and exit |
+| `c` | **Copy to clipboard**: format selected files (via system clipboard or OSC 52 over SSH/tmux) and exit |
+| `C` (`Shift+C`) | **Copy reproducible CLI command**: copy exact `repox \` invocation (`-I file1 -I file2`) to clipboard and exit |
 | `Enter` | On a file: dump context to stdout/file and exit; on a folder: toggle expand/collapse |
 | `q` | Abort and quit without action |
 
@@ -150,7 +156,7 @@ Launch the terminal interface with `repox -i` or `repox --tui`.
 ### 1. Interactive selection with live token budgeting
 ```bash
 repox -i -p fable
-# Also supports: -p luna, -p gemini, -p deepseek, -p o1, -p claude
+# Also supports: -p luna, -p gemini, -p deepseek, -p o1, -p claude, -p llama
 ```
 Launches the TUI calibrated against the target model's context window (e.g. 1,000,000 tokens for Fable/Gemini, 1.05M for Luna).
 
@@ -158,7 +164,7 @@ Launches the TUI calibrated against the target model's context window (e.g. 1,00
 ```bash
 repox -c
 ```
-Copies Claude-formatted XML prompt directly to your system clipboard:
+Copies Claude-formatted XML prompt directly to your system clipboard (automatically falls back to OSC 52 escape sequences when running inside remote SSH or `tmux` sessions):
 ```text
 ✓ Copied to clipboard: 42 files (142.6 KB) in 4.12ms
 ```
@@ -186,17 +192,33 @@ repox src/ -s 500KB -d 3 -o prompt.xml
 repox -q | pbcopy
 ```
 
-### 7. Architectural Outline / Signatures Only (`--outline`)
+### 7. Architectural Outline / Signatures Only (`--outline` / `--signatures-only`)
 ```bash
 repox --outline -c
 ```
-Extracts type definitions, traits, interfaces, and function signatures while stripping implementation bodies into `{ /* ... */ }`. Compresses multi-thousand-line codebases into compact token budgets (~90% token reduction) ideal for system architecture planning and LLM codebase mapping.
+Extracts type definitions, structs, traits, interfaces, classes, and function signatures across **Rust, Python, Go, TypeScript/JavaScript, C/C++, and Java** while stripping implementation bodies into `{ /* ... */ }`. Compresses multi-thousand-line codebases into compact token budgets (60–90% token reduction) ideal for system architecture planning and LLM codebase mapping.
 
-### 8. Synthetic Tool-Call Output (`-f tool-call`)
+### 8. Synthetic Tool-Call Output (`-f tool-call` / `-f json`)
 ```bash
 repox -f tool-call -c
 ```
-Formats files as an array of JSON `read_file` tool responses. Perfect for agent harnesses (Ollama, OpenAI, Anthropic message loops) where models treat tool outputs as authoritative ground truth.
+Formats files as an array of JSON `read_file` tool responses. Perfect for LLM agent harnesses (Ollama, OpenAI, Anthropic message loops) where models treat tool outputs as authoritative ground truth rather than user-pasted text.
+
+### 9. Smart Lockfile Summarizer (`--summary-locks`)
+```bash
+repox --summary-locks -c
+```
+Instead of completely skipping huge lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) or burning 40,000+ tokens on raw dependency graphs, `--summary-locks` distills them into a compact `pkg @ version` manifest (`.deps.txt`), preserving exact dependency version awareness at <2% of the original token cost.
+
+### 10. Git-Aware Diff Context Packing (`-m, --modified` & `--staged`)
+```bash
+# Pack only modified/untracked working-tree files for a focused debugging prompt
+repox -m -c
+
+# Pack only staged files along with a unified git diff for PR description or code review
+repox --staged -c
+```
+Queries Git status and `git diff` to pack only changed files alongside their unified diff patch, giving LLMs both the exact line changes and full surrounding file context for PR reviews and bug fixes.
 
 ---
 
@@ -289,7 +311,7 @@ Recursive tree widgets frequently allocate on every frame and suffer from cache 
 ### 2. Multi-Threaded Work-Stealing Traversal (`crates/repox-core/src/scanner.rs`)
 - Uses `ignore::WalkBuilder` with lock-free channel batching.
 - Automatically respects `.gitignore`, `.ignore`, and `.repoxignore`.
-- Evaluates binary content via Git's 8KB NUL-byte heuristic and drops lockfiles, minified bundles, SVGs, and secret keys (`.env*`, `*pem`, `*id_rsa*`) before reading full payloads into memory.
+- Evaluates binary content via Git's 8KB NUL-byte heuristic and drops lockfiles (unless `--summary-locks` is enabled), minified bundles, SVGs, and secret keys (`.env*`, `*pem`, `*id_rsa*`) before reading full payloads into memory.
 
 ### 3. TUI via `stderr` for Clean Unix Pipelines
 The interactive TUI renders exclusively to `stderr`. This means `stdout` is never corrupted by escape codes, allowing clean composition:
@@ -297,8 +319,8 @@ The interactive TUI renders exclusively to `stderr`. This means `stdout` is neve
 repox -i | llm prompt "explain the architecture"
 ```
 
-### 4. Terminal Safety
-Uses an RAII `TerminalGuard` with a panic hook to guarantee that raw mode is disabled and the alternate screen is exited even if an abnormal termination occurs.
+### 4. Terminal Safety & OSC 52 Clipboard Fallback
+Uses an RAII `TerminalGuard` with a panic hook to guarantee that raw mode is disabled and the alternate screen is exited even if an abnormal termination occurs. Clipboard operations use `arboard` with automatic fallback to ANSI OSC 52 escape sequences for seamless copying over headless SSH and `tmux`.
 
 ---
 
@@ -312,11 +334,15 @@ Arguments:
 
 Options:
   -i, --interactive          Launch interactive terminal UI file picker (alias: --tui)
-  -f, --format <FORMAT>      Format template: 'xml' (Claude-optimized) or 'markdown' / 'md' [default: xml]
-  -c, --copy                 Copy output context directly to system clipboard
+  -f, --format <FORMAT>      Format template: 'xml' (Claude), 'markdown' / 'md', or 'tool-call' / 'json' [default: xml]
+  -c, --copy                 Copy output context directly to system clipboard (supports OSC 52 fallback)
   -o, --output <FILE>        Write formatted context to an output file instead of stdout
   -t, --tokens               Calculate total token count using multi-threaded tiktoken tokenizer
-  -p, --token-profile <PROF> Tokenizer profile: 'fable' (Claude Fable 5.1, 1M), 'luna' (GPT-6 Luna, 1.05M), 'claude', 'o1', 'deepseek', 'gemini', 'cl100k' [default: cl100k]
+  -p, --token-profile <PROF> Tokenizer profile: 'fable' (Claude Fable 5.1, 1M), 'luna' (GPT-6 Luna, 1.05M), 'claude', 'o1', 'deepseek', 'gemini', 'llama', 'cl100k' [default: cl100k]
+      --outline              Extract architectural signatures and type outlines only (alias: --signatures-only)
+      --summary-locks        Summarize lockfiles (Cargo.lock, package-lock.json, pnpm-lock.yaml, poetry.lock, yarn.lock, go.sum) into compact pkg @ version manifests
+  -m, --modified             Pack only Git modified and untracked working-tree files with unified diff context
+      --staged               Pack only Git staged files with unified diff context for PRs and reviews
   -s, --max-file-size <SIZE> Skip files exceeding size threshold (e.g. 500KB, 1.5MB) [default: 1MB]
   -d, --max-depth <DEPTH>    Maximum directory nesting depth to traverse
       --no-gitignore         Disable respecting .gitignore files
