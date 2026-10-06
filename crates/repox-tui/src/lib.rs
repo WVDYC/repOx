@@ -24,6 +24,7 @@
 
 mod app;
 mod error;
+pub mod highlight;
 mod preview;
 mod terminal;
 mod tree;
@@ -66,6 +67,8 @@ impl TuiOptions {
 pub enum TuiAction {
     /// `c`: copy the formatted context to the clipboard.
     Copy,
+    /// `C`: copy the reproducible CLI command invocation to the clipboard.
+    CopyCommand,
     /// `Enter` on a file: output through the normal channels (stdout / `-o`).
     Output,
 }
@@ -100,6 +103,10 @@ pub fn run(files: Vec<RepoFile>, options: TuiOptions) -> Result<TuiOutcome, TuiE
         Exit::Abort => TuiOutcome::Cancelled,
         Exit::Copy => TuiOutcome::Selected {
             action: TuiAction::Copy,
+            files: app.into_selected(),
+        },
+        Exit::CopyCommand => TuiOutcome::Selected {
+            action: TuiAction::CopyCommand,
             files: app.into_selected(),
         },
         Exit::Output => TuiOutcome::Selected {

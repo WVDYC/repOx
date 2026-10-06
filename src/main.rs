@@ -26,6 +26,75 @@ fn format_bytes(bytes: u64) -> String {
     }
 }
 
+fn base64_encode(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let b0 = chunk[0];
+        let b1 = if chunk.len() > 1 { chunk[1] } else { 0 };
+        let b2 = if chunk.len() > 2 { chunk[2] } else { 0 };
+        out.push(TABLE[(b0 >> 2) as usize] as char);
+        out.push(TABLE[(((b0 & 0x03) << 4) | (b1 >> 4)) as usize] as char);
+        if chunk.len() > 1 {
+            out.push(TABLE[(((b1 & 0x0F) << 2) | (b2 >> 6)) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if chunk.len() > 2 {
+            out.push(TABLE[(b2 & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
+    }
+    out
+}
+
+/// Cross-platform clipboard copy with Wayland, X11, and ANSI OSC 52 fallbacks.
+fn copy_to_clipboard(text: &str) -> eyre::Result<()> {
+    if let Ok(mut clipboard) = arboard::Clipboard::new()
+        && clipboard.set_text(text).is_ok()
+    {
+        return Ok(());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::{Command, Stdio};
+        if let Ok(mut child) = Command::new("wl-copy").stdin(Stdio::piped()).spawn() {
+            if let Some(mut stdin) = child.stdin.take() {
+                let _ = stdin.write_all(text.as_bytes());
+            }
+            if child.wait().map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+
+        if let Ok(mut child) = Command::new("xclip")
+            .args(["-selection", "clipboard"])
+            .stdin(Stdio::piped())
+            .spawn()
+        {
+            if let Some(mut stdin) = child.stdin.take() {
+                let _ = stdin.write_all(text.as_bytes());
+            }
+            if child.wait().map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+    }
+
+    if text.len() <= 100_000 && io::stderr().is_terminal() {
+        let b64 = base64_encode(text.as_bytes());
+        let osc52 = format!("\x1b]52;c;{}\x07", b64);
+        let mut stderr = io::stderr().lock();
+        let _ = stderr.write_all(osc52.as_bytes());
+        let _ = stderr.flush();
+        return Ok(());
+    }
+
+    eyre::bail!("Failed to access system clipboard (arboard, Wayland wl-copy, or X11 xclip)")
+}
+
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
 
@@ -99,6 +168,21 @@ fn main() -> eyre::Result<()> {
                 }
                 if action == repox_tui::TuiAction::Copy {
                     should_copy = true;
+                } else if action == repox_tui::TuiAction::CopyCommand {
+                    let cmd = if selected.len() == 1 {
+                        format!("repox {}", selected[0].relative_path.display())
+                    } else {
+                        let mut s = String::from("repox");
+                        for f in &selected {
+                            s.push_str(&format!(" \\\n  {}", f.relative_path.display()));
+                        }
+                        s
+                    };
+                    copy_to_clipboard(&cmd)?;
+                    if !cli.quiet {
+                        eprintln!("✓ Copied command to clipboard:\n{}", cmd);
+                    }
+                    return Ok(());
                 }
                 files = selected;
             }
@@ -123,11 +207,7 @@ fn main() -> eyre::Result<()> {
     let mut performed_action = false;
 
     if should_copy {
-        let mut clipboard = arboard::Clipboard::new()
-            .map_err(|e| eyre::eyre!("Failed to access system clipboard: {e}"))?;
-        clipboard
-            .set_text(&formatted)
-            .map_err(|e| eyre::eyre!("Failed to copy prompt to clipboard: {e}"))?;
+        copy_to_clipboard(&formatted)?;
         performed_action = true;
     }
 

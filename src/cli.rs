@@ -206,6 +206,13 @@ pub struct Cli {
         help = "Extract architecture signatures and type outlines only (strips function bodies)"
     )]
     pub outline: bool,
+
+    /// Summarize lockfiles into compact dependency manifests (.deps.txt).
+    #[arg(
+        long = "summary-locks",
+        help = "Summarize lockfiles into compact dependency manifests instead of skipping them"
+    )]
+    pub summary_locks: bool,
 }
 
 impl Cli {
@@ -233,6 +240,7 @@ impl Cli {
             include_patterns: self.include.clone(),
             threads,
             outline: self.outline,
+            summary_locks: self.summary_locks,
         }
     }
 }

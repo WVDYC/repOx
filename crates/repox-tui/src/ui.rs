@@ -271,7 +271,7 @@ fn draw_preview(frame: &mut Frame, area: Rect, app: &mut App) {
         return;
     }
     match app.tree.file(node_idx) {
-        Some(file) => draw_file_preview(buf, area, inner, app, &file.content),
+        Some(file) => draw_file_preview(buf, area, inner, app, &file.content, file.language_hint()),
         None => draw_dir_summary(buf, inner, app, node_idx),
     }
 }
@@ -288,7 +288,7 @@ fn tail_fit(path: &str, max: usize) -> (&str, bool) {
     (&path[start..], true)
 }
 
-fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, content: &str) {
+fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, content: &str, lang: &str) {
     let total = app.preview.line_count();
     if total == 0 {
         Writer::new(buf, inner.x, inner.y, inner.right()).put(" (empty file)", DIM_STYLE);
@@ -312,7 +312,7 @@ fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, conte
         let mut w = Writer::new(buf, inner.x + 1, y, inner.right());
         w.put(number.as_str(), DIM_STYLE);
         w.put(" │ ", DIM_STYLE);
-        draw_expanded(buf, text_x, y, inner.right(), line, Style::new());
+        draw_highlighted_line(buf, text_x, y, inner.right(), line, lang);
     }
 
     // Footer note when the preview was cut and the end is on screen.
@@ -340,22 +340,43 @@ fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, conte
     }
 }
 
-/// Draws `line` with tabs expanded to `TAB_WIDTH` columns. (`set_stringn` drops
-/// control characters, which would otherwise swallow the indentation.)
-fn draw_expanded(buf: &mut Buffer, x: u16, y: u16, right: u16, line: &str, style: Style) {
+/// Draws `line` with lexical syntax highlighting and expanded tabs.
+fn draw_highlighted_line(buf: &mut Buffer, x: u16, y: u16, right: u16, line: &str, lang: &str) {
+    let spans = crate::highlight::highlight_line(line, lang);
+    if spans.is_empty() {
+        draw_expanded(buf, x, y, right, line, Style::new());
+        return;
+    }
     let mut cx = x;
-    for (i, segment) in line.split('\t').enumerate() {
+    for (segment, style) in spans {
+        if cx >= right {
+            break;
+        }
+        cx = draw_expanded_segment(buf, cx, y, right, segment, style);
+    }
+}
+
+fn draw_expanded_segment(buf: &mut Buffer, x: u16, y: u16, right: u16, text: &str, style: Style) -> u16 {
+    let mut cx = x;
+    for (i, segment) in text.split('\t').enumerate() {
         if i > 0 {
-            let col = cx - x;
+            let col = cx.saturating_sub(x);
             cx = cx.saturating_add(TAB_WIDTH - col % TAB_WIDTH);
         }
         if cx >= right {
-            return;
+            return right;
         }
         cx = buf
-            .set_stringn(cx, y, segment, usize::from(right - cx), style)
+            .set_stringn(cx, y, segment, usize::from(right.saturating_sub(cx)), style)
             .0;
     }
+    cx
+}
+
+/// Draws `line` with tabs expanded to `TAB_WIDTH` columns. (`set_stringn` drops
+/// control characters, which would otherwise swallow the indentation.)
+fn draw_expanded(buf: &mut Buffer, x: u16, y: u16, right: u16, line: &str, style: Style) {
+    let _ = draw_expanded_segment(buf, x, y, right, line, style);
 }
 
 fn draw_dir_summary(buf: &mut Buffer, inner: Rect, app: &App, node_idx: usize) {
@@ -507,7 +528,7 @@ const NORMAL_HINTS: &[(&str, &str)] = &[
     ("i", "invert"),
     ("/", "filter"),
     ("PgUp/Dn", "preview"),
-    ("c", "copy"),
+    ("c/C", "copy/cmd"),
     ("Enter", "output"),
     ("q", "quit"),
 ];

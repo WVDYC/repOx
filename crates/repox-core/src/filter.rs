@@ -22,6 +22,7 @@ pub fn is_lockfile(path: &Path) -> bool {
             | "pubspec.lock"
             | "bun.lockb"
             | "bun.lock"
+            | "go.sum"
     )
 }
 
@@ -151,6 +152,7 @@ mod tests {
         assert!(is_lockfile(Path::new("deep/nested/package-lock.json")));
         assert!(is_lockfile(Path::new("pnpm-lock.yaml")));
         assert!(is_lockfile(Path::new("yarn.lock")));
+        assert!(is_lockfile(Path::new("go.sum")));
         assert!(!is_lockfile(Path::new("Cargo.toml")));
         assert!(!is_lockfile(Path::new("package.json")));
     }

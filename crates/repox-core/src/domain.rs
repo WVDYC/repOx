@@ -210,6 +210,8 @@ pub struct ScanOptions {
     pub threads: usize,
     /// Extract architectural outline/signatures instead of full implementation bodies.
     pub outline: bool,
+    /// Parse and summarize lockfiles into compact dependency manifests (.deps.txt).
+    pub summary_locks: bool,
 }
 
 impl Default for ScanOptions {
@@ -228,6 +230,7 @@ impl Default for ScanOptions {
                 .map(|p| p.get())
                 .unwrap_or(4),
             outline: false,
+            summary_locks: false,
         }
     }
 }
@@ -282,6 +285,11 @@ impl ScanOptions {
 
     pub fn with_outline(mut self, outline: bool) -> Self {
         self.outline = outline;
+        self
+    }
+
+    pub fn with_summary_locks(mut self, enabled: bool) -> Self {
+        self.summary_locks = enabled;
         self
     }
 }

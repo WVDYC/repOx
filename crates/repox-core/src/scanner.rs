@@ -173,8 +173,14 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 }
             };
 
+            let is_lock = crate::filter::is_lockfile(&relative_path);
+
             // Default heuristic skip rules (lockfiles, svgs, minified, secrets, binary extensions)
-            if should_skip_path(&relative_path) {
+            if is_lock {
+                if !options.summary_locks {
+                    return None;
+                }
+            } else if should_skip_path(&relative_path) {
                 return None;
             }
 
@@ -201,7 +207,8 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
             };
 
             let file_size = metadata.len();
-            if let Some(limit) = max_size
+            if !is_lock
+                && let Some(limit) = max_size
                 && file_size > limit
             {
                 tracing::debug!(
@@ -235,6 +242,27 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                     return None;
                 }
             };
+
+            // When summary_locks is enabled, convert lockfiles into compact dependency manifests (.deps.txt)
+            if is_lock && options.summary_locks {
+                if let Some(summary) = crate::lockfile::summarize_lockfile(&relative_path, &content) {
+                    let summary_len = summary.len() as u64;
+                    if let Some(limit) = max_size
+                        && summary_len > limit
+                    {
+                        return None;
+                    }
+                    let summary_path = relative_path.with_extension("deps.txt");
+                    return Some(RepoFile::new(
+                        summary_path,
+                        full_path,
+                        summary_len,
+                        summary,
+                    ));
+                } else {
+                    return None;
+                }
+            }
 
             let (final_content, final_size) = if options.outline {
                 let dummy_file = RepoFile::new(

@@ -25,6 +25,7 @@ pub enum Mode {
 pub enum Exit {
     Abort,
     Copy,
+    CopyCommand,
     Output,
 }
 
@@ -164,6 +165,7 @@ impl App {
             KeyCode::Char('i') => self.tree.invert_selection(),
             KeyCode::Char('/') => self.mode = Mode::Filter,
             KeyCode::Char('c') => return self.confirm(Exit::Copy),
+            KeyCode::Char('C') => return self.confirm(Exit::CopyCommand),
             KeyCode::PageDown => self.scroll_preview(1),
             KeyCode::PageUp => self.scroll_preview(-1),
             _ => {}
