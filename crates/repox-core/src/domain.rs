@@ -212,6 +212,10 @@ pub struct ScanOptions {
     pub outline: bool,
     /// Parse and summarize lockfiles into compact dependency manifests (.deps.txt).
     pub summary_locks: bool,
+    /// Filter to only include Git modified and untracked files.
+    pub git_modified: bool,
+    /// Filter to only include Git staged files.
+    pub git_staged: bool,
 }
 
 impl Default for ScanOptions {
@@ -231,6 +235,8 @@ impl Default for ScanOptions {
                 .unwrap_or(4),
             outline: false,
             summary_locks: false,
+            git_modified: false,
+            git_staged: false,
         }
     }
 }
@@ -290,6 +296,16 @@ impl ScanOptions {
 
     pub fn with_summary_locks(mut self, enabled: bool) -> Self {
         self.summary_locks = enabled;
+        self
+    }
+
+    pub fn with_git_modified(mut self, modified: bool) -> Self {
+        self.git_modified = modified;
+        self
+    }
+
+    pub fn with_git_staged(mut self, staged: bool) -> Self {
+        self.git_staged = staged;
         self
     }
 }

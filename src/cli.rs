@@ -213,6 +213,21 @@ pub struct Cli {
         help = "Summarize lockfiles into compact dependency manifests instead of skipping them"
     )]
     pub summary_locks: bool,
+
+    /// Only include Git modified and untracked files.
+    #[arg(
+        short = 'm',
+        long = "modified",
+        help = "Only pack Git modified and untracked files"
+    )]
+    pub modified: bool,
+
+    /// Only include Git staged files.
+    #[arg(
+        long = "staged",
+        help = "Only pack Git staged files"
+    )]
+    pub staged: bool,
 }
 
 impl Cli {
@@ -241,6 +256,8 @@ impl Cli {
             threads,
             outline: self.outline,
             summary_locks: self.summary_locks,
+            git_modified: self.modified,
+            git_staged: self.staged,
         }
     }
 }
@@ -338,5 +355,22 @@ mod tests {
         let cli_json = Cli::try_parse_from(["repox", "-f", "json", "--signatures-only"]).unwrap();
         assert_eq!(cli_json.format, OutputFormat::ToolCall);
         assert!(cli_json.outline);
+    }
+
+    #[test]
+    fn test_cli_git_modified_and_staged_flags() {
+        let cli_mod = Cli::try_parse_from(["repox", "-m"]).unwrap();
+        assert!(cli_mod.modified);
+        assert!(!cli_mod.staged);
+        let opts_mod = cli_mod.to_scan_options();
+        assert!(opts_mod.git_modified);
+        assert!(!opts_mod.git_staged);
+
+        let cli_staged = Cli::try_parse_from(["repox", "--staged"]).unwrap();
+        assert!(!cli_staged.modified);
+        assert!(cli_staged.staged);
+        let opts_staged = cli_staged.to_scan_options();
+        assert!(!opts_staged.git_modified);
+        assert!(opts_staged.git_staged);
     }
 }

@@ -91,10 +91,10 @@ fn parse_toml_package_blocks(content: &str) -> Vec<(String, String)> {
                 if let Some(val) = extract_quoted_string(v.trim()) {
                     current_name = Some(val);
                 }
-            } else if key == "version" {
-                if let Some(val) = extract_quoted_string(v.trim()) {
-                    current_version = Some(val);
-                }
+            } else if key == "version"
+                && let Some(val) = extract_quoted_string(v.trim())
+            {
+                current_version = Some(val);
             }
         }
     }
@@ -151,10 +151,10 @@ fn parse_npm_packages_section(content: &str) -> BTreeSet<(String, String)> {
             .unwrap_or(rest.len() - after_key);
         let block_slice = &rest[after_key..after_key + next_entry];
 
-        if let Some(version) = extract_json_field(block_slice, "version") {
-            if !pkg_name.is_empty() {
-                packages.insert((pkg_name.to_string(), version));
-            }
+        if let Some(version) = extract_json_field(block_slice, "version")
+            && !pkg_name.is_empty()
+        {
+            packages.insert((pkg_name.to_string(), version));
         }
 
         cursor = after_key;
@@ -179,25 +179,26 @@ fn parse_npm_dependencies_section(content: &str) -> BTreeSet<(String, String)> {
         let trimmed = line.trim();
 
         // Check if line declares a dependency entry: `"package-name": {`
-        if trimmed.ends_with('{') {
-            if let Some(colon_idx) = trimmed.find(':') {
-                let key_part = trimmed[..colon_idx].trim();
-                if let Some(name) = extract_quoted_string(key_part) {
-                    if name != "dependencies" && name != "requires" && name != "packages" {
-                        current_name = Some(name);
-                    }
-                }
+        if trimmed.ends_with('{')
+            && let Some(colon_idx) = trimmed.find(':')
+        {
+            let key_part = trimmed[..colon_idx].trim();
+            if let Some(name) = extract_quoted_string(key_part)
+                && name != "dependencies"
+                && name != "requires"
+                && name != "packages"
+            {
+                current_name = Some(name);
             }
         }
 
         // Check for version inside package entry
-        if let Some(ref name) = current_name {
-            if trimmed.starts_with("\"version\"") {
-                if let Some(ver) = extract_json_field(trimmed, "version") {
-                    packages.insert((name.clone(), ver));
-                    current_name = None;
-                }
-            }
+        if let Some(ref name) = current_name
+            && trimmed.starts_with("\"version\"")
+            && let Some(ver) = extract_json_field(trimmed, "version")
+        {
+            packages.insert((name.clone(), ver));
+            current_name = None;
         }
     }
 
@@ -235,19 +236,19 @@ pub fn parse_pnpm_lock_yaml(content: &str) -> Vec<(String, String)> {
 
             // Find the last '@' separating package name from version
             // (handles scoped packages like @scope/pkg@1.0.0)
-            if let Some(last_at) = key.rfind('@') {
-                if last_at > 0 {
-                    let name = &key[..last_at];
-                    let mut version = &key[last_at + 1..];
+            if let Some(last_at) = key.rfind('@')
+                && last_at > 0
+            {
+                let name = &key[..last_at];
+                let mut version = &key[last_at + 1..];
 
-                    // Clean version from internal pnpm hashes (e.g. 1.0.0_peer-dep)
-                    if let Some((clean_ver, _)) = version.split_once('_') {
-                        version = clean_ver;
-                    }
+                // Clean version from internal pnpm hashes (e.g. 1.0.0_peer-dep)
+                if let Some((clean_ver, _)) = version.split_once('_') {
+                    version = clean_ver;
+                }
 
-                    if !name.is_empty() && !version.is_empty() {
-                        packages.insert((name.to_string(), version.to_string()));
-                    }
+                if !name.is_empty() && !version.is_empty() {
+                    packages.insert((name.to_string(), version.to_string()));
                 }
             }
         }
@@ -307,17 +308,17 @@ pub fn parse_yarn_lock(content: &str) -> Vec<(String, String)> {
             } else {
                 current_name = None;
             }
-        } else if let Some(ref name) = current_name {
-            if trimmed.starts_with("version") {
-                if let Some((_, ver_part)) = trimmed.split_once(' ') {
-                    let ver = ver_part.trim().trim_matches('"').trim_matches('\'');
-                    packages.insert((name.clone(), ver.to_string()));
-                    current_name = None;
-                } else if let Some((_, ver_part)) = trimmed.split_once(':') {
-                    let ver = ver_part.trim().trim_matches('"').trim_matches('\'');
-                    packages.insert((name.clone(), ver.to_string()));
-                    current_name = None;
-                }
+        } else if let Some(ref name) = current_name
+            && trimmed.starts_with("version")
+        {
+            if let Some((_, ver_part)) = trimmed.split_once(' ') {
+                let ver = ver_part.trim().trim_matches('"').trim_matches('\'');
+                packages.insert((name.clone(), ver.to_string()));
+                current_name = None;
+            } else if let Some((_, ver_part)) = trimmed.split_once(':') {
+                let ver = ver_part.trim().trim_matches('"').trim_matches('\'');
+                packages.insert((name.clone(), ver.to_string()));
+                current_name = None;
             }
         }
     }

@@ -152,6 +152,12 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
 
     let total_scanned = paths.len();
 
+    let git_changed_files = if options.git_modified || options.git_staged {
+        Some(crate::git::get_git_changed_files(&root, options.git_staged)?)
+    } else {
+        None
+    };
+
     // 3. Process collected paths concurrently using rayon
     let root_ref = &root;
     let max_size = options.max_file_size;
@@ -172,6 +178,12 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                     }
                 }
             };
+
+            if let Some(ref changed_set) = git_changed_files
+                && !changed_set.contains(&relative_path)
+            {
+                return None;
+            }
 
             let is_lock = crate::filter::is_lockfile(&relative_path);
 
@@ -245,23 +257,20 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
 
             // When summary_locks is enabled, convert lockfiles into compact dependency manifests (.deps.txt)
             if is_lock && options.summary_locks {
-                if let Some(summary) = crate::lockfile::summarize_lockfile(&relative_path, &content) {
-                    let summary_len = summary.len() as u64;
-                    if let Some(limit) = max_size
-                        && summary_len > limit
-                    {
-                        return None;
-                    }
-                    let summary_path = relative_path.with_extension("deps.txt");
-                    return Some(RepoFile::new(
-                        summary_path,
-                        full_path,
-                        summary_len,
-                        summary,
-                    ));
-                } else {
+                let summary = crate::lockfile::summarize_lockfile(&relative_path, &content)?;
+                let summary_len = summary.len() as u64;
+                if let Some(limit) = max_size
+                    && summary_len > limit
+                {
                     return None;
                 }
+                let summary_path = relative_path.with_extension("deps.txt");
+                return Some(RepoFile::new(
+                    summary_path,
+                    full_path,
+                    summary_len,
+                    summary,
+                ));
             }
 
             let (final_content, final_size) = if options.outline {
