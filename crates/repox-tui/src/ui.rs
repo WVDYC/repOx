@@ -288,7 +288,14 @@ fn tail_fit(path: &str, max: usize) -> (&str, bool) {
     (&path[start..], true)
 }
 
-fn draw_file_preview(buf: &mut Buffer, area: Rect, inner: Rect, app: &App, content: &str, lang: &str) {
+fn draw_file_preview(
+    buf: &mut Buffer,
+    area: Rect,
+    inner: Rect,
+    app: &App,
+    content: &str,
+    lang: &str,
+) {
     let total = app.preview.line_count();
     if total == 0 {
         Writer::new(buf, inner.x, inner.y, inner.right()).put(" (empty file)", DIM_STYLE);
@@ -356,7 +363,14 @@ fn draw_highlighted_line(buf: &mut Buffer, x: u16, y: u16, right: u16, line: &st
     }
 }
 
-fn draw_expanded_segment(buf: &mut Buffer, x: u16, y: u16, right: u16, text: &str, style: Style) -> u16 {
+fn draw_expanded_segment(
+    buf: &mut Buffer,
+    x: u16,
+    y: u16,
+    right: u16,
+    text: &str,
+    style: Style,
+) -> u16 {
     let mut cx = x;
     for (i, segment) in text.split('\t').enumerate() {
         if i > 0 {

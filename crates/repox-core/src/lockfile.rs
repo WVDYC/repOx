@@ -269,7 +269,9 @@ pub fn parse_go_sum(content: &str) -> Vec<(String, String)> {
 
         let mut parts = trimmed.split_whitespace();
         let Some(pkg) = parts.next() else { continue };
-        let Some(version_raw) = parts.next() else { continue };
+        let Some(version_raw) = parts.next() else {
+            continue;
+        };
 
         // Strip the "/go.mod" suffix used for checksum verification entries
         let version = version_raw.strip_suffix("/go.mod").unwrap_or(version_raw);

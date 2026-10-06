@@ -131,17 +131,56 @@ fn is_type_name(s: &str, lang: &str) -> bool {
     match lang {
         "rust" => matches!(
             s,
-            "u8" | "u16" | "u32" | "u64" | "u128" | "usize" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "f32" | "f64" | "bool" | "char" | "str" | "Self"
+            "u8" | "u16"
+                | "u32"
+                | "u64"
+                | "u128"
+                | "usize"
+                | "i8"
+                | "i16"
+                | "i32"
+                | "i64"
+                | "i128"
+                | "isize"
+                | "f32"
+                | "f64"
+                | "bool"
+                | "char"
+                | "str"
+                | "Self"
         ),
         "go" => matches!(
             s,
-            "int" | "int32" | "int64" | "uint" | "uint32" | "uint64" | "string" | "byte" | "error" | "float32" | "float64" | "bool"
+            "int"
+                | "int32"
+                | "int64"
+                | "uint"
+                | "uint32"
+                | "uint64"
+                | "string"
+                | "byte"
+                | "error"
+                | "float32"
+                | "float64"
+                | "bool"
         ),
         "c" | "cpp" | "java" => matches!(
             s,
-            "int" | "long" | "float" | "double" | "void" | "char" | "bool" | "boolean" | "auto" | "size_t"
+            "int"
+                | "long"
+                | "float"
+                | "double"
+                | "void"
+                | "char"
+                | "bool"
+                | "boolean"
+                | "auto"
+                | "size_t"
         ),
-        "typescript" => matches!(s, "string" | "number" | "boolean" | "any" | "unknown" | "never" | "void"),
+        "typescript" => matches!(
+            s,
+            "string" | "number" | "boolean" | "any" | "unknown" | "never" | "void"
+        ),
         _ => false,
     }
 }
@@ -150,31 +189,126 @@ fn is_keyword(s: &str, lang: &str) -> bool {
     match lang {
         "rust" => matches!(
             s,
-            "as" | "break" | "const" | "continue" | "crate" | "else" | "enum" | "extern" | "fn"
-                | "for" | "if" | "impl" | "in" | "let" | "loop" | "match" | "mod" | "move"
-                | "mut" | "pub" | "ref" | "return" | "self" | "static" | "struct" | "super"
-                | "trait" | "type" | "unsafe" | "use" | "where" | "while" | "async" | "await"
+            "as" | "break"
+                | "const"
+                | "continue"
+                | "crate"
+                | "else"
+                | "enum"
+                | "extern"
+                | "fn"
+                | "for"
+                | "if"
+                | "impl"
+                | "in"
+                | "let"
+                | "loop"
+                | "match"
+                | "mod"
+                | "move"
+                | "mut"
+                | "pub"
+                | "ref"
+                | "return"
+                | "self"
+                | "static"
+                | "struct"
+                | "super"
+                | "trait"
+                | "type"
+                | "unsafe"
+                | "use"
+                | "where"
+                | "while"
+                | "async"
+                | "await"
                 | "dyn"
         ),
         "python" => matches!(
             s,
-            "def" | "class" | "return" | "import" | "from" | "as" | "if" | "elif" | "else"
-                | "for" | "while" | "try" | "except" | "finally" | "with" | "async" | "await"
-                | "yield" | "lambda" | "pass" | "raise" | "is" | "in" | "not" | "and" | "or"
+            "def"
+                | "class"
+                | "return"
+                | "import"
+                | "from"
+                | "as"
+                | "if"
+                | "elif"
+                | "else"
+                | "for"
+                | "while"
+                | "try"
+                | "except"
+                | "finally"
+                | "with"
+                | "async"
+                | "await"
+                | "yield"
+                | "lambda"
+                | "pass"
+                | "raise"
+                | "is"
+                | "in"
+                | "not"
+                | "and"
+                | "or"
         ),
-        "toml" => matches!(s, "name" | "version" | "edition" | "dependencies" | "workspace"),
+        "toml" => matches!(
+            s,
+            "name" | "version" | "edition" | "dependencies" | "workspace"
+        ),
         "go" => matches!(
             s,
-            "func" | "package" | "import" | "type" | "struct" | "interface" | "return" | "if"
-                | "else" | "for" | "range" | "switch" | "case" | "default" | "var" | "const"
-                | "go" | "chan" | "select" | "defer"
+            "func"
+                | "package"
+                | "import"
+                | "type"
+                | "struct"
+                | "interface"
+                | "return"
+                | "if"
+                | "else"
+                | "for"
+                | "range"
+                | "switch"
+                | "case"
+                | "default"
+                | "var"
+                | "const"
+                | "go"
+                | "chan"
+                | "select"
+                | "defer"
         ),
         "typescript" | "javascript" | "tsx" | "jsx" => matches!(
             s,
-            "function" | "const" | "let" | "var" | "return" | "if" | "else" | "for" | "while"
-                | "import" | "export" | "from" | "default" | "class" | "extends" | "interface"
-                | "type" | "async" | "await" | "try" | "catch" | "finally" | "throw" | "new"
-                | "this" | "typeof" | "instanceof"
+            "function"
+                | "const"
+                | "let"
+                | "var"
+                | "return"
+                | "if"
+                | "else"
+                | "for"
+                | "while"
+                | "import"
+                | "export"
+                | "from"
+                | "default"
+                | "class"
+                | "extends"
+                | "interface"
+                | "type"
+                | "async"
+                | "await"
+                | "try"
+                | "catch"
+                | "finally"
+                | "throw"
+                | "new"
+                | "this"
+                | "typeof"
+                | "instanceof"
         ),
         _ => matches!(
             s,
@@ -191,9 +325,21 @@ mod tests {
     fn test_highlight_rust_line() {
         let line = "pub fn add(a: i32, b: i32) -> i32 {";
         let spans = highlight_line(line, "rust");
-        assert!(spans.iter().any(|(word, s)| *word == "pub" && s.fg == Some(Color::Magenta)));
-        assert!(spans.iter().any(|(word, s)| *word == "fn" && s.fg == Some(Color::Magenta)));
-        assert!(spans.iter().any(|(word, s)| *word == "i32" && s.fg == Some(Color::Yellow)));
+        assert!(
+            spans
+                .iter()
+                .any(|(word, s)| *word == "pub" && s.fg == Some(Color::Magenta))
+        );
+        assert!(
+            spans
+                .iter()
+                .any(|(word, s)| *word == "fn" && s.fg == Some(Color::Magenta))
+        );
+        assert!(
+            spans
+                .iter()
+                .any(|(word, s)| *word == "i32" && s.fg == Some(Color::Yellow))
+        );
     }
 
     #[test]
@@ -210,6 +356,10 @@ mod tests {
     fn test_highlight_string() {
         let line = "let msg = \"hello world\";";
         let spans = highlight_line(line, "rust");
-        assert!(spans.iter().any(|(tok, s)| *tok == "\"hello world\"" && s.fg == Some(Color::Green)));
+        assert!(
+            spans
+                .iter()
+                .any(|(tok, s)| *tok == "\"hello world\"" && s.fg == Some(Color::Green))
+        );
     }
 }

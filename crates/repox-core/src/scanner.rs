@@ -153,7 +153,10 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
     let total_scanned = paths.len();
 
     let git_changed_files = if options.git_modified || options.git_staged {
-        Some(crate::git::get_git_changed_files(&root, options.git_staged)?)
+        Some(crate::git::get_git_changed_files(
+            &root,
+            options.git_staged,
+        )?)
     } else {
         None
     };
@@ -265,12 +268,7 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                     return None;
                 }
                 let summary_path = relative_path.with_extension("deps.txt");
-                return Some(RepoFile::new(
-                    summary_path,
-                    full_path,
-                    summary_len,
-                    summary,
-                ));
+                return Some(RepoFile::new(summary_path, full_path, summary_len, summary));
             }
 
             let (final_content, final_size) = if options.outline {

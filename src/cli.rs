@@ -223,10 +223,7 @@ pub struct Cli {
     pub modified: bool,
 
     /// Only include Git staged files.
-    #[arg(
-        long = "staged",
-        help = "Only pack Git staged files"
-    )]
+    #[arg(long = "staged", help = "Only pack Git staged files")]
     pub staged: bool,
 }
 
