@@ -216,6 +216,8 @@ pub struct ScanOptions {
     pub git_modified: bool,
     /// Filter to only include Git staged files.
     pub git_staged: bool,
+    /// Automatically scan and redact inline secrets and API keys from file contents.
+    pub redact_secrets: bool,
 }
 
 impl Default for ScanOptions {
@@ -237,6 +239,7 @@ impl Default for ScanOptions {
             summary_locks: false,
             git_modified: false,
             git_staged: false,
+            redact_secrets: false,
         }
     }
 }
@@ -306,6 +309,11 @@ impl ScanOptions {
 
     pub fn with_git_staged(mut self, staged: bool) -> Self {
         self.git_staged = staged;
+        self
+    }
+
+    pub fn with_redact_secrets(mut self, enabled: bool) -> Self {
+        self.redact_secrets = enabled;
         self
     }
 }

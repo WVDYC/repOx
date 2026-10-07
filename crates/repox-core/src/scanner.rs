@@ -258,6 +258,13 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 }
             };
 
+            let content = if options.redact_secrets {
+                let (redacted, _) = crate::redact::redact_secrets(&content);
+                redacted
+            } else {
+                content
+            };
+
             // When summary_locks is enabled, convert lockfiles into compact dependency manifests (.deps.txt)
             if is_lock && options.summary_locks {
                 let summary = crate::lockfile::summarize_lockfile(&relative_path, &content)?;
@@ -269,6 +276,24 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 }
                 let summary_path = relative_path.with_extension("deps.txt");
                 return Some(RepoFile::new(summary_path, full_path, summary_len, summary));
+            }
+
+            // When summary_locks is enabled, also compress ComfyUI workflow JSON graphs into .workflow.txt manifests
+            if options.summary_locks
+                && relative_path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+                && let Some(wf_summary) = crate::video::summarize_comfyui_workflow(&content)
+            {
+                let wf_len = wf_summary.len() as u64;
+                if let Some(limit) = max_size
+                    && wf_len > limit
+                {
+                    return None;
+                }
+                let wf_path = relative_path.with_extension("workflow.txt");
+                return Some(RepoFile::new(wf_path, full_path, wf_len, wf_summary));
             }
 
             let (final_content, final_size) = if options.outline {
@@ -283,7 +308,8 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 let outline_len = outline_text.len() as u64;
                 (outline_text, outline_len)
             } else {
-                (content, file_size)
+                let current_len = content.len() as u64;
+                (content, current_len)
             };
 
             Some(RepoFile::new(
@@ -429,5 +455,51 @@ impl User {
                 .contains("pub fn new(id: u64) -> Self { /* ... */ }")
         );
         assert!(!files[0].content.contains("let computed = id * 2;"));
+    }
+
+    #[test]
+    fn test_scan_repository_redact_secrets_and_comfyui_workflow() {
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+
+        let config_rs = root.join("config.rs");
+        fs::write(
+            &config_rs,
+            "pub const KEY: &str = \"sk-proj-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789\";\n",
+        )
+        .unwrap();
+
+        let comfy_json = root.join("wan_t2v.json");
+        fs::write(
+            &comfy_json,
+            r#"{
+                "1": {
+                    "class_type": "UNETLoader",
+                    "inputs": { "unet_name": "wan2.1_t2v_14B_fp16.safetensors" }
+                },
+                "2": {
+                    "class_type": "CLIPTextEncode",
+                    "inputs": { "text": "cinematic neon rain in Tokyo, 35mm anamorphic" }
+                }
+            }"#,
+        )
+        .unwrap();
+
+        let options = ScanOptions::new(root)
+            .with_redact_secrets(true)
+            .with_summary_locks(true);
+        let (files, _) = scan_repository(&options).unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert_eq!(files[0].relative_path, PathBuf::from("config.rs"));
+        assert!(files[0].content.contains("[REDACTED_SECRET]"));
+        assert!(!files[0].content.contains("sk-proj-"));
+
+        assert_eq!(
+            files[1].relative_path,
+            PathBuf::from("wan_t2v.workflow.txt")
+        );
+        assert!(files[1].content.contains("# ComfyUI Workflow Manifest"));
+        assert!(files[1].content.contains("UNETLoader x1"));
     }
 }

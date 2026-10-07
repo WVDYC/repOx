@@ -95,6 +95,22 @@ fn copy_to_clipboard(text: &str) -> eyre::Result<()> {
     eyre::bail!("Failed to access system clipboard (arboard, Wayland wl-copy, or X11 xclip)")
 }
 
+trait IntoTokenCount {
+    fn into_token_count(self) -> usize;
+}
+
+impl IntoTokenCount for usize {
+    fn into_token_count(self) -> usize {
+        self
+    }
+}
+
+impl<E> IntoTokenCount for std::result::Result<usize, E> {
+    fn into_token_count(self) -> usize {
+        self.unwrap_or(0)
+    }
+}
+
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
 
@@ -122,6 +138,44 @@ fn main() -> eyre::Result<()> {
         .init();
 
     let total_start = Instant::now();
+
+    // 0. Handle standalone AI video prompt optimization mode if requested
+    if let Some(ref raw_video_prompt) = cli.video_prompt {
+        let optimized = repox_core::optimize_video_prompt(raw_video_prompt);
+        let raw_tokens =
+            repox_core::count_text_tokens(raw_video_prompt, cli.token_profile).into_token_count();
+        let opt_tokens =
+            repox_core::count_text_tokens(&optimized, cli.token_profile).into_token_count();
+
+        let mut performed_action = false;
+        if cli.copy {
+            copy_to_clipboard(&optimized)?;
+            performed_action = true;
+        }
+        if let Some(ref out_path) = cli.output {
+            fs::write(out_path, &optimized)
+                .wrap_err_with(|| format!("Failed to write output to {}", out_path.display()))?;
+            performed_action = true;
+        }
+        if !performed_action {
+            let mut stdout = io::stdout().lock();
+            stdout
+                .write_all(optimized.as_bytes())
+                .wrap_err("Failed to write output to stdout")?;
+            stdout
+                .write_all(b"\n")
+                .wrap_err("Failed to write newline to stdout")?;
+            stdout.flush().wrap_err("Failed to flush stdout")?;
+        }
+
+        if !cli.quiet {
+            let elapsed = total_start.elapsed();
+            eprintln!(
+                "🎬 Video prompt optimized ({raw_tokens} -> {opt_tokens} tokens) in {elapsed:.2?}"
+            );
+        }
+        return Ok(());
+    }
 
     // 1. Scan and filter files
     let scan_opts = cli.to_scan_options();
@@ -198,6 +252,18 @@ fn main() -> eyre::Result<()> {
             .map_err(|e| eyre::eyre!("Failed to initialize token counter: {e}"))?;
         let total_tokens = counter.count_files_tokens(&mut files);
         summary.total_tokens = Some(total_tokens);
+    }
+
+    // 3b. Enforce token budget via smart outline compression & graceful pruning if requested
+    if let Some(max_tokens) = cli.budget {
+        let fitted = repox_core::apply_token_budget(&mut files, max_tokens, cli.token_profile)
+            .map_err(|e| eyre::eyre!("Failed to apply token budget: {e}"))?;
+        summary.file_count = files.len();
+        summary.total_bytes = files.iter().map(|f| f.size_bytes).sum();
+        summary.total_tokens = Some(files.iter().filter_map(|f| f.token_count).sum());
+        if !cli.quiet && fitted > 0 {
+            eprintln!("⚡ Auto-budget ({max_tokens} tokens): compressed/fitted {fitted} files");
+        }
     }
 
     // 4. Format repository into LLM prompt

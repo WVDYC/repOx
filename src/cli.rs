@@ -48,6 +48,41 @@ pub fn parse_human_size(s: &str) -> std::result::Result<u64, String> {
     Ok((value * multiplier) as u64)
 }
 
+/// Parse human-readable token budgets (e.g., "50000", "50k", "100K", "1m").
+pub fn parse_token_budget(s: &str) -> std::result::Result<usize, String> {
+    let s = s.trim();
+    if s.is_empty() {
+        return Err("Token budget cannot be empty".to_string());
+    }
+
+    let (num_part, unit_part) = match s.find(|c: char| c.is_alphabetic()) {
+        Some(idx) => (&s[..idx], s[idx..].trim()),
+        None => (s, ""),
+    };
+
+    let value: f64 = num_part
+        .trim()
+        .parse()
+        .map_err(|e| format!("Invalid token count '{num_part}': {e}"))?;
+
+    if value <= 0.0 || !value.is_finite() {
+        return Err("Token budget must be positive".to_string());
+    }
+
+    let multiplier = match unit_part.to_ascii_lowercase().as_str() {
+        "" => 1.0,
+        "k" => 1_000.0,
+        "m" => 1_000_000.0,
+        other => {
+            return Err(format!(
+                "Unknown token unit '{other}'. Supported units: k, m"
+            ));
+        }
+    };
+
+    Ok((value * multiplier) as usize)
+}
+
 #[derive(Parser, Debug)]
 #[command(
     name = "repox",
@@ -225,6 +260,32 @@ pub struct Cli {
     /// Only include Git staged files.
     #[arg(long = "staged", help = "Only pack Git staged files")]
     pub staged: bool,
+
+    /// Automatically compress/prune repository to fit within a strict token budget (e.g. 50k, 128k).
+    #[arg(
+        long = "budget",
+        alias = "max-tokens",
+        value_parser = parse_token_budget,
+        value_name = "TOKENS",
+        help = "Auto-compress (via outlines) and prune files to fit within token budget (e.g. 50k, 100k)"
+    )]
+    pub budget: Option<usize>,
+
+    /// Automatically scan and redact inline secrets and API keys from file contents.
+    #[arg(
+        short = 'r',
+        long = "redact-secrets",
+        help = "Scan and redact inline secrets, API keys, and private keys with [REDACTED_SECRET]"
+    )]
+    pub redact_secrets: bool,
+
+    /// Optimize a raw AI video prompt into structured <character_lock> and 5s <shot> blocks.
+    #[arg(
+        long = "video-prompt",
+        value_name = "PROMPT",
+        help = "Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & 5s shots"
+    )]
+    pub video_prompt: Option<String>,
 }
 
 impl Cli {
@@ -255,6 +316,7 @@ impl Cli {
             summary_locks: self.summary_locks,
             git_modified: self.modified,
             git_staged: self.staged,
+            redact_secrets: self.redact_secrets,
         }
     }
 }
@@ -369,5 +431,46 @@ mod tests {
         let opts_staged = cli_staged.to_scan_options();
         assert!(!opts_staged.git_modified);
         assert!(opts_staged.git_staged);
+    }
+
+    #[test]
+    fn test_parse_token_budget() {
+        assert_eq!(parse_token_budget("50000").unwrap(), 50_000);
+        assert_eq!(parse_token_budget("50k").unwrap(), 50_000);
+        assert_eq!(parse_token_budget("100K").unwrap(), 100_000);
+        assert_eq!(parse_token_budget("1m").unwrap(), 1_000_000);
+        assert_eq!(parse_token_budget("1.5M").unwrap(), 1_500_000);
+        assert!(parse_token_budget("").is_err());
+        assert!(parse_token_budget("0").is_err());
+        assert!(parse_token_budget("-10k").is_err());
+        assert!(parse_token_budget("10xyz").is_err());
+    }
+
+    #[test]
+    fn test_cli_budget_redact_and_video_prompt_flags() {
+        let cli = Cli::try_parse_from([
+            "repox",
+            "--budget",
+            "50k",
+            "-r",
+            "--video-prompt",
+            "Please generate a video of a neon samurai walking in the rain.",
+        ])
+        .unwrap();
+
+        assert_eq!(cli.budget, Some(50_000));
+        assert!(cli.redact_secrets);
+        assert_eq!(
+            cli.video_prompt.as_deref(),
+            Some("Please generate a video of a neon samurai walking in the rain.")
+        );
+
+        let scan_opts = cli.to_scan_options();
+        assert!(scan_opts.redact_secrets);
+
+        let cli_alias =
+            Cli::try_parse_from(["repox", "--max-tokens", "100K", "--redact-secrets"]).unwrap();
+        assert_eq!(cli_alias.budget, Some(100_000));
+        assert!(cli_alias.redact_secrets);
     }
 }
