@@ -312,12 +312,10 @@ pub fn scan_repository(options: &ScanOptions) -> Result<(Vec<RepoFile>, ScanSumm
                 (content, current_len)
             };
 
-            Some(RepoFile::new(
-                relative_path,
-                full_path,
-                final_size,
-                final_content,
-            ))
+            Some(
+                RepoFile::new(relative_path, full_path, final_size, final_content)
+                    .with_outlined(options.outline),
+            )
         })
         .collect();
 
@@ -448,6 +446,7 @@ impl User {
         let (files, _) = scan_repository(&options).unwrap();
 
         assert_eq!(files.len(), 1);
+        assert!(files[0].is_outlined);
         assert!(files[0].content.contains("pub struct User"));
         assert!(
             files[0]

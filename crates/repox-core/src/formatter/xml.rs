@@ -35,7 +35,13 @@ pub fn format_xml(files: &[RepoFile]) -> String {
     // 2. Append each file block
     for file in files {
         let display_path = file.display_path();
-        output.push_str(&format!("<file path=\"{display_path}\">\n"));
+        if file.is_outlined {
+            output.push_str(&format!(
+                "<file path=\"{display_path}\" outline=\"true\">\n"
+            ));
+        } else {
+            output.push_str(&format!("<file path=\"{display_path}\">\n"));
+        }
         output.push_str(&file.content);
         if !file.content.ends_with('\n') {
             output.push('\n');
@@ -81,5 +87,31 @@ mod tests {
         assert!(xml.contains("</repository_structure>"));
         assert!(xml.contains("<file path=\"Cargo.toml\">\n[package]\nname = \"repox\"\n</file>"));
         assert!(xml.contains("<file path=\"src/main.rs\">\nfn main() {}\n</file>"));
+    }
+
+    #[test]
+    fn test_format_xml_outlined_attribute() {
+        let files = vec![
+            RepoFile::new(
+                PathBuf::from("src/lib.rs"),
+                PathBuf::from("/repo/src/lib.rs"),
+                30,
+                "pub fn full() { let x = 1; }\n".to_string(),
+            ),
+            RepoFile::new(
+                PathBuf::from("tests/heavy.rs"),
+                PathBuf::from("/repo/tests/heavy.rs"),
+                25,
+                "fn test_it() { /* ... */ }\n".to_string(),
+            )
+            .with_outlined(true),
+        ];
+
+        let xml = format_xml(&files);
+
+        assert!(xml.contains("<file path=\"src/lib.rs\">\npub fn full() { let x = 1; }\n</file>"));
+        assert!(xml.contains(
+            "<file path=\"tests/heavy.rs\" outline=\"true\">\nfn test_it() { /* ... */ }\n</file>"
+        ));
     }
 }

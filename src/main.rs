@@ -262,7 +262,27 @@ fn main() -> eyre::Result<()> {
         summary.total_bytes = files.iter().map(|f| f.size_bytes).sum();
         summary.total_tokens = Some(files.iter().filter_map(|f| f.token_count).sum());
         if !cli.quiet && fitted > 0 {
-            eprintln!("⚡ Auto-budget ({max_tokens} tokens): compressed/fitted {fitted} files");
+            let outlined_paths: Vec<String> = files
+                .iter()
+                .filter(|f| f.is_outlined)
+                .map(|f| f.display_path())
+                .collect();
+            if outlined_paths.is_empty() {
+                eprintln!("⚡ Auto-budget ({max_tokens} tokens): compressed/fitted {fitted} files");
+            } else {
+                let preview = if outlined_paths.len() <= 5 {
+                    outlined_paths.join(", ")
+                } else {
+                    format!(
+                        "{}, ... (+{} more)",
+                        outlined_paths[..5].join(", "),
+                        outlined_paths.len() - 5
+                    )
+                };
+                eprintln!(
+                    "⚡ Auto-budget ({max_tokens} tokens): compressed/fitted {fitted} files (outlined: {preview})"
+                );
+            }
         }
     }
 

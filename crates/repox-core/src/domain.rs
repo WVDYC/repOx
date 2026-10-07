@@ -14,6 +14,8 @@ pub struct RepoFile {
     pub content: String,
     /// Cached token count for this specific file, if calculated.
     pub token_count: Option<usize>,
+    /// Whether this file's content has been compressed into an architectural outline.
+    pub is_outlined: bool,
 }
 
 impl RepoFile {
@@ -31,7 +33,15 @@ impl RepoFile {
             size_bytes,
             content,
             token_count: None,
+            is_outlined: false,
         }
+    }
+
+    /// Marks whether this file has been compressed into an architectural outline.
+    #[inline]
+    pub fn with_outlined(mut self, outlined: bool) -> Self {
+        self.is_outlined = outlined;
+        self
     }
 
     /// Formats the relative path using standard UNIX forward slashes for prompt consistency.

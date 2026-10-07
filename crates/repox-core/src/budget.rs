@@ -137,18 +137,22 @@ pub fn apply_token_budget(
 
         if outlined.len() < files[idx].content.len() {
             let old_tokens = files[idx].token_count.unwrap_or(0);
-            let mut single = vec![RepoFile::new(
-                files[idx].relative_path.clone(),
-                files[idx].absolute_path.clone(),
-                outlined.len() as u64,
-                outlined,
-            )];
+            let mut single = vec![
+                RepoFile::new(
+                    files[idx].relative_path.clone(),
+                    files[idx].absolute_path.clone(),
+                    outlined.len() as u64,
+                    outlined,
+                )
+                .with_outlined(true),
+            ];
             let new_tokens = counter.count_files_tokens(&mut single);
 
             if new_tokens < old_tokens
                 && let Some(updated_file) = single.pop()
             {
                 files[idx] = updated_file;
+                files[idx].is_outlined = true;
                 total_tokens = total_tokens.saturating_sub(old_tokens) + new_tokens;
                 affected[idx] = true;
             }
@@ -222,6 +226,7 @@ mod tests {
         assert_eq!(affected, 0);
         assert_eq!(files.len(), 1);
         assert!(files[0].content.contains("let step_0"));
+        assert!(!files[0].is_outlined);
     }
 
     #[test]
@@ -248,9 +253,11 @@ mod tests {
 
         // Core file remains untouched
         assert!(files[0].content.contains("let step_0"));
+        assert!(!files[0].is_outlined);
         // Test file was automatically compressed to an outline
         assert!(files[1].content.contains("/* ... */"));
         assert!(!files[1].content.contains("let step_0"));
+        assert!(files[1].is_outlined);
 
         let final_total: usize = files.iter().map(|f| f.token_count.unwrap()).sum();
         assert!(final_total <= target_budget);
