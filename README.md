@@ -43,12 +43,15 @@ Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Sili
 
 ---
 
-## Comparison Matrix & v0.2.0 Features
+## Comparison Matrix & v0.3.0 Features
 
-| Feature | `repox` (v0.2.0) | `repomix` | `gitingest` | `files-to-prompt` |
+| Feature | `repox` (v0.3.0) | `repomix` | `gitingest` | `files-to-prompt` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Language & Runtime** | Rust (static binary) | Node.js (requires npm) | Python (web-first) | Python (pip) |
 | **Interactive Terminal UI** | **Yes (`ratatui` + syntax highlighting)** | No | Web browser only | No |
+| **Auto Token Budget Fitter** | **Yes (`-b, --budget` / `--max-tokens`)** | No | No | No |
+| **AI Video & ComfyUI Prompt Compiler** | **Yes (`--video-prompt` + ComfyUI JSON minifier)** | No | No | No |
+| **Streaming Secret Redaction** | **Yes (`-r, --redact-secrets`)** | Basic | No | No |
 | **Architectural Signature Extraction** | **Yes (`--outline` / `--signatures-only`)** | Experimental | No | No |
 | **Synthetic Agent Tool-Call Output** | **Yes (`-f tool-call` / `-f json`)** | No | No | No |
 | **Smart Lockfile Summarizer** | **Yes (`--summary-locks`)** | No | No | No |
@@ -204,11 +207,11 @@ repox -f tool-call -c
 ```
 Formats files as an array of JSON `read_file` tool responses. Perfect for LLM agent harnesses (Ollama, OpenAI, Anthropic message loops) where models treat tool outputs as authoritative ground truth rather than user-pasted text.
 
-### 9. Smart Lockfile Summarizer (`--summary-locks`)
+### 9. Smart Lockfile & ComfyUI Workflow Summarizer (`--summary-locks`)
 ```bash
 repox --summary-locks -c
 ```
-Instead of completely skipping huge lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) or burning 40,000+ tokens on raw dependency graphs, `--summary-locks` distills them into a compact `pkg @ version` manifest (`.deps.txt`), preserving exact dependency version awareness at <2% of the original token cost.
+Instead of completely skipping huge lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) or burning 40,000+ tokens on raw dependency graphs and ComfyUI visual workflow JSON files, `--summary-locks` distills lockfiles into a compact `pkg @ version` manifest (`.deps.txt`) and compresses 30,000-token ComfyUI workflow graphs into sorted node-and-prompt manifests (85–95% token reduction).
 
 ### 10. Git-Aware Diff Context Packing (`-m, --modified` & `--staged`)
 ```bash
@@ -219,6 +222,25 @@ repox -m -c
 repox --staged -c
 ```
 Queries Git status and `git diff` to pack only changed files alongside their unified diff patch, giving LLMs both the exact line changes and full surrounding file context for PR reviews and bug fixes.
+
+### 11. Automatic Token Budget Fitter (`-b, --budget` / `--max-tokens`)
+```bash
+repox --budget 50k -c
+# Supports exact integers or shorthand suffixes: 32k, 64k, 100k, 1m
+```
+Automatically fits any repository strictly inside a target token budget. `repOx` prioritizes core entrypoints (`main.rs`, `lib.rs`, `index.ts`) and Git-modified files, progressively outline-compresses large secondary modules into architectural signatures, and drops lowest-priority test/fixture payloads only if necessary.
+
+### 12. Streaming Secret Redaction (`-r, --redact-secrets`)
+```bash
+repox -r -c
+```
+Runs a single-pass lexical scanner over all packed files to detect and replace hardcoded credentials—including OpenAI keys (`sk-...`, `sk-proj-...`), Anthropic keys (`sk-ant-...`), GitHub tokens (`ghp_...`, `gho_...`, `github_pat_...`), AWS Access Key IDs (`AKIA...`), and PEM/OpenSSH `-----BEGIN ... PRIVATE KEY-----` blocks—with `[REDACTED_SECRET]`.
+
+### 13. AI Video Prompt & Continuity Compiler (`--video-prompt`)
+```bash
+repox --video-prompt "Please generate a video of a cyberpunk courier in a yellow trench coat on 35mm anamorphic lens in neon rain. Then she leaps across a rooftop as a drone tracks her." -c
+```
+Compiles natural-language scene descriptions into structured, attention-maximizing multi-shot prompts for **Grok Video, Kling, Sora, Veo, and Wan 2.1**. Strips conversational filler, synthesizes a `<character_lock>` block (`subject`, `lens`, `lighting`), and splits scenes into 5-second `<shot>` blocks with explicit `[Camera]`, `[Motion]`, and `[Continuity: anchor=sharpest_tail_frame]` directives backed by a <1ms 3x3 Laplacian variance sharpness scorer.
 
 ---
 
@@ -339,8 +361,11 @@ Options:
   -o, --output <FILE>        Write formatted context to an output file instead of stdout
   -t, --tokens               Calculate total token count using multi-threaded tiktoken tokenizer
   -p, --token-profile <PROF> Tokenizer profile: 'fable' (Claude Fable 5.1, 1M), 'luna' (GPT-6 Luna, 1.05M), 'claude', 'o1', 'deepseek', 'gemini', 'llama', 'cl100k' [default: cl100k]
+  -b, --budget <TOKENS>      Automatically fit repository into a strict token budget (e.g. 50k, 100000; alias: --max-tokens)
+  -r, --redact-secrets       Scan and mask hardcoded API keys, tokens, and private keys with [REDACTED_SECRET]
+      --video-prompt <TEXT>  Compile a raw video prompt into a <character_lock> + 5s <shot> continuity prompt
       --outline              Extract architectural signatures and type outlines only (alias: --signatures-only)
-      --summary-locks        Summarize lockfiles (Cargo.lock, package-lock.json, pnpm-lock.yaml, poetry.lock, yarn.lock, go.sum) into compact pkg @ version manifests
+      --summary-locks        Summarize lockfiles and ComfyUI workflow JSONs into compact manifests
   -m, --modified             Pack only Git modified and untracked working-tree files with unified diff context
       --staged               Pack only Git staged files with unified diff context for PRs and reviews
   -s, --max-file-size <SIZE> Skip files exceeding size threshold (e.g. 500KB, 1.5MB) [default: 1MB]
