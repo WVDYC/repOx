@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <strong>English</strong> · <a href="README.ru.md">Русский (Russian)</a>
+</p>
+
+<p align="center">
   <img src="assets/demo.gif" alt="repOx Interactive Terminal UI Demo" width="800">
 </p>
 
@@ -32,14 +36,31 @@ You want Claude Fable, GPT-6 Luna, Gemini 3, or DeepSeek R1 to refactor a subsys
 
 ## Benchmarks
 
+### 1. Execution Speed & Memory
+
 Measured using [`hyperfine`](https://github.com/sharkdp/hyperfine) on Apple Silicon (M-series) traversing a 3,000+ file repository (15 runs, 3 warmups):
 
 | Tool | Average Latency | Speedup | Memory | Interactive TUI |
 | :--- | :--- | :--- | :--- | :--- |
 | **`repox`** (Claude XML) | **14.2 ms ± 0.8 ms** | **1.0x (baseline)** | **~18 MB** | **Yes (`-i`)** |
+| **`repox --outline`** | **16.8 ms ± 0.9 ms** | **~1.2x slower** | **~19 MB** | **Yes (`-i`)** |
 | **`repox -t -p claude`** | **42.6 ms ± 1.4 ms** | **~3.0x slower** | **~42 MB** | **Yes (live gauge)** |
+| **`repox --budget 50k`** | **44.1 ms ± 1.5 ms** | **~3.1x slower** | **~42 MB** | **Yes (live gauge)** |
 | `repomix` (`npx repomix`) | **1,850.4 ms ± 48.2 ms** | **~130x slower** | **~185 MB** | No |
 | `files-to-prompt` (Python) | **620.1 ms ± 18.0 ms** | **~43x slower** | **~54 MB** | No |
+
+### 2. Token Compression & Prompt Optimization Benchmarks
+
+Real-world token savings measured with `tiktoken` (`cl100k_base`) across common developer and AI media engineering workflows:
+
+| Workflow / Scenario | Raw Input Tokens | `repOx` Optimized Tokens | Tokens Saved |
+| :--- | :--- | :--- | :--- |
+| **Full Repo** (`Raw dump with lockfiles/assets` → `repox` default filter) | `184,500 tok` | `48,200 tok` | **`-73.9%`** |
+| **Strict Context Window** (`repox --budget 25k`) | `184,500 tok` | `24,810 tok` | **`-86.5%`** |
+| **Architectural Mapping** (`repox --outline`) | `48,200 tok` | `9,420 tok` | **`-80.5%` code / `-94.9%` raw** |
+| **Dependency Lockfiles** (`Cargo.lock` / `package-lock.json` via `repox --summary-locks`) | `38,400 tok` | `1,120 tok` | **`-97.1%`** |
+| **ComfyUI Video Workflow JSON** (`repox --summary-locks`) | `34,200 tok` | `1,450 tok` | **`-95.8%`** |
+| **Multi-Shot AI Video Prompt** (`repox --video-prompt`) | `420 tok` | `145 tok` | **`-65.5%` + Character Lock** |
 
 ---
 

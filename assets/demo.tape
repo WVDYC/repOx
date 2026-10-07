@@ -16,56 +16,53 @@ Set LetterSpacing 0
 Set LineHeight 1.2
 Set CursorBlink false
 
-# 1. Launch interactive prompt packer with Claude calibration
-Type "repox -i -p claude"
+# 1. Quick CLI showcase: architectural outline & automatic token budget fitter
+Type "repox --outline -t -p claude -c"
+Sleep 400ms
+Enter
+Sleep 1.2s
+
+Type "repox --budget 20k -c"
+Sleep 400ms
+Enter
+Sleep 1.2s
+
+# 2. Launch interactive prompt packer with Claude Fable 5.1 (1M) calibration
+Type "repox -i -p fable"
 Sleep 500ms
 Enter
 Sleep 1.5s
 
-# 2. Navigate through the pre-order file tree
+# 3. Navigate through the pre-order file tree & preview lexical syntax highlighting
 Type "j"
 Sleep 250ms
 Type "j"
 Sleep 250ms
 
-# 3. Expand 'crates' directory
+# 4. Expand 'crates' directory and descend into 'crates/repox-core/src'
 Type "l"
 Sleep 400ms
-
-# 4. Descend into 'crates/repox-core'
 Type "j"
 Sleep 200ms
 Type "l"
 Sleep 400ms
-
-# 5. Inspect 'domain.rs' and observe preview updating in right pane
 Type "j"
 Sleep 700ms
 
-# 6. Deselect a file and observe instant O(1) token gauge reduction
+# 5. Toggle selection with Space and observe instant O(1) token gauge updates
 Type " "
 Sleep 600ms
 Type " "
 Sleep 500ms
 
-# 7. Select All / Invert demonstration
-Type "a"
-Sleep 800ms
-Type "a"
-Sleep 600ms
-
-# 8. Trigger real-time fuzzy filter with nucleo-matcher
+# 6. Trigger real-time fuzzy search filter with '/'
 Type "/"
 Sleep 300ms
 Type "scanner"
 Sleep 800ms
-Backspace 7
-Sleep 200ms
-Type "tree"
-Sleep 800ms
 Escape
 Sleep 400ms
 
-# 9. Copy formatted context to clipboard and exit
+# 7. Copy formatted context to clipboard with 'c' and exit
 Type "c"
 Sleep 2.5s
