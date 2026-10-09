@@ -64,9 +64,9 @@ Real-world token savings measured with `tiktoken` (`cl100k_base`) across common 
 
 ---
 
-## Comparison Matrix & v0.3.0 Features
+## Comparison Matrix & v0.3.3 Features
 
-| Feature | `repox` (v0.3.0) | `repomix` | `gitingest` | `files-to-prompt` |
+| Feature | `repox` (v0.3.3) | `repomix` | `gitingest` | `files-to-prompt` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Language & Runtime** | Rust (static binary) | Node.js (requires npm) | Python (web-first) | Python (pip) |
 | **Interactive Terminal UI** | **Yes (`ratatui` + syntax highlighting)** | No | Web browser only | No |
@@ -232,7 +232,7 @@ Formats files as an array of JSON `read_file` tool responses. Perfect for LLM ag
 ```bash
 repox --summary-locks -c
 ```
-Instead of completely skipping huge lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) or burning 40,000+ tokens on raw dependency graphs and ComfyUI visual workflow JSON files, `--summary-locks` distills lockfiles into a compact `pkg @ version` manifest (`.deps.txt`) and compresses 30,000-token ComfyUI workflow graphs into sorted node-and-prompt manifests (85–95% token reduction).
+Instead of completely skipping huge lockfiles (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) or burning 40,000+ tokens on raw dependency graphs and ComfyUI visual workflow JSON files, `--summary-locks` distills lockfiles into a compact `pkg @ version` manifest (`.deps.txt`) and compresses 30,000-token ComfyUI workflow graphs into sorted node-and-prompt manifests (85–95% token reduction) that extract resolution (`width`, `height`, `length`/`frames`, `fps`), sampler config (`steps`, `cfg`, `sampler_name`, `scheduler`, `seed`), checkpoints, and positive/negative prompts.
 
 ### 10. Git-Aware Diff Context Packing (`-m, --modified` & `--staged`)
 ```bash
@@ -257,11 +257,11 @@ repox -r -c
 ```
 Runs a single-pass lexical scanner over all packed files to detect and replace hardcoded credentials—including OpenAI keys (`sk-...`, `sk-proj-...`), Anthropic keys (`sk-ant-...`), GitHub tokens (`ghp_...`, `gho_...`, `github_pat_...`), AWS Access Key IDs (`AKIA...`), and PEM/OpenSSH `-----BEGIN ... PRIVATE KEY-----` blocks—with `[REDACTED_SECRET]`.
 
-### 13. AI Video Prompt & Continuity Compiler (`--video-prompt`)
+### 13. AI Video Prompt & Continuity Compiler (`--video-prompt`, `--video-anchor`, `--shot-duration`)
 ```bash
-repox --video-prompt "Please generate a video of a cyberpunk courier in a yellow trench coat on 35mm anamorphic lens in neon rain. Then she leaps across a rooftop as a drone tracks her." -c
+repox --video-prompt "Please generate a video of a cyberpunk courier in a yellow trench coat on 35mm anamorphic lens in neon rain. Then she leaps across a rooftop as a drone tracks her." --shot-duration 8 --video-anchor clip1.mp4 -c
 ```
-Compiles natural-language scene descriptions into structured, attention-maximizing multi-shot prompts for **Grok Video, Kling, Sora, Veo, and Wan 2.1**. Strips conversational filler, synthesizes a `<character_lock>` block (`subject`, `lens`, `lighting`), and splits scenes into 5-second `<shot>` blocks with explicit `[Camera]`, `[Motion]`, and `[Continuity: anchor=sharpest_tail_frame]` directives backed by a <1ms 3x3 Laplacian variance sharpness scorer.
+Compiles natural-language scene descriptions into structured, attention-maximizing multi-shot prompts for **Grok Video, Kling, Sora, Veo, and Wan 2.1**. Strips conversational filler and generates a **dual output**: (1) a structured XML brief (`<character_lock>` + `<shot>` blocks with configurable `--shot-duration <SECONDS>`, default `5s`) for prompt-writing LLMs, and (2) clean, tag-free sampler strings where the full character identity line (`subject`, `lens`, `lighting`) is repeated per clip for direct paste into video generators. Passing `--video-anchor <CLIP.mp4>` extracts the sharpest tail frame via FFmpeg and a denoised 60% center-crop 3x3 Laplacian variance scorer (<1ms per frame), writing `<clip>.anchor.png` for seamless Image-to-Video multi-shot continuity.
 
 ---
 
@@ -384,7 +384,9 @@ Options:
   -p, --token-profile <PROF> Tokenizer profile: 'fable' (Claude Fable 5.1, 1M), 'luna' (GPT-6 Luna, 1.05M), 'claude', 'o1', 'deepseek', 'gemini', 'llama', 'cl100k' [default: cl100k]
   -b, --budget <TOKENS>      Automatically fit repository into a strict token budget (e.g. 50k, 100000; alias: --max-tokens)
   -r, --redact-secrets       Scan and mask hardcoded API keys, tokens, and private keys with [REDACTED_SECRET]
-      --video-prompt <TEXT>  Compile a raw video prompt into a <character_lock> + 5s <shot> continuity prompt
+      --video-prompt <TEXT>  Compile a raw video prompt into a <character_lock> + <shot> continuity prompt and clean sampler strings
+      --video-anchor <FILE>  Extract sharpest tail frame from a video clip via FFmpeg + center-crop Laplacian variance to <clip>.anchor.png
+      --shot-duration <SECONDS>  Target duration in seconds for each compiled video shot [default: 5]
       --outline              Extract architectural signatures and type outlines only (alias: --signatures-only)
       --summary-locks        Summarize lockfiles and ComfyUI workflow JSONs into compact manifests
   -m, --modified             Pack only Git modified and untracked working-tree files with unified diff context

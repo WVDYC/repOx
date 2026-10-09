@@ -64,9 +64,9 @@
 
 ---
 
-## Матрица сравнения и возможности v0.3.0
+## Матрица сравнения и возможности v0.3.3
 
-| Возможность | `repox` (v0.3.0) | `repomix` | `gitingest` | `files-to-prompt` |
+| Возможность | `repox` (v0.3.3) | `repomix` | `gitingest` | `files-to-prompt` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Язык и среда исполнения** | Rust (статический бинарник) | Node.js (требует npm) | Python (ориентирован на веб) | Python (pip) |
 | **Интерактивный TUI в терминале** | **Да (`ratatui` + подсветка синтаксиса)** | Нет | Только веб-браузер | Нет |
@@ -232,7 +232,7 @@ repox -f tool-call -c
 ```bash
 repox --summary-locks -c
 ```
-Вместо полного игнорирования огромных lock-файлов (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) или сжигания 40 000+ токенов на сырые графы зависимостей и JSON-файлы визуальных воркфлоу ComfyUI, флаг `--summary-locks` преобразует lock-файлы в компактный манифест `пакет @ версия` (`.deps.txt`), а графы ComfyUI на 30 000 токенов сжимает в отсортированные манифесты нод и промптов (экономия 85–95% токенов).
+Вместо полного игнорирования огромных lock-файлов (`Cargo.lock`, `package-lock.json`, `pnpm-lock.yaml`, `poetry.lock`, `yarn.lock`, `go.sum`) или сжигания 40 000+ токенов на сырые графы зависимостей и JSON-файлы визуальных воркфлоу ComfyUI, флаг `--summary-locks` преобразует lock-файлы в компактный манифест `пакет @ версия` (`.deps.txt`), а графы ComfyUI на 30 000 токенов сжимает в отсортированные манифесты нод и промптов (экономия 85–95% токенов), автоматически извлекая разрешение (`width`, `height`, `length`/`frames`, `fps`), настройки сэмплера (`steps`, `cfg`, `sampler_name`, `scheduler`, `seed`), чекпоинты и позитивные/негативные промпты.
 
 ### 10. Упаковка с учётом изменений Git (`-m, --modified` и `--staged`)
 ```bash
@@ -257,11 +257,11 @@ repox -r -c
 ```
 Запускает однопроходный лексический сканер по всем упаковываемым файлам, автоматически обнаруживая и заменяя захардкоженные ключи и токены — включая ключи OpenAI (`sk-...`, `sk-proj-...`), Anthropic (`sk-ant-...`), токены GitHub (`ghp_...`, `gho_...`, `github_pat_...`), идентификаторы ключей AWS (`AKIA...`), а также блоки приватных ключей PEM/OpenSSH `-----BEGIN ... PRIVATE KEY-----` — на безопасную заглушку `[REDACTED_SECRET]`.
 
-### 13. Компилятор промптов и консистентности для AI-видео (`--video-prompt`)
+### 13. Компилятор промптов и консистентности для AI-видео (`--video-prompt`, `--video-anchor`, `--shot-duration`)
 ```bash
-repox --video-prompt "Please generate a video of a cyberpunk courier in a yellow trench coat on 35mm anamorphic lens in neon rain. Then she leaps across a rooftop as a drone tracks her." -c
+repox --video-prompt "Please generate a video of a cyberpunk courier in a yellow trench coat on 35mm anamorphic lens in neon rain. Then she leaps across a rooftop as a drone tracks her." --shot-duration 8 --video-anchor clip1.mp4 -c
 ```
-Компилирует описания сцен на естественном языке в структурированные мульти-шот промпты с максимальной концентрацией внимания для **Grok Video, Kling, Sora, Veo и Wan 2.1**. Удаляет разговорный шум, синтезирует блок фиксации персонажа `<character_lock>` (`subject`, `lens`, `lighting`) и разбивает сцену на 5-секундные блоки `<shot>` с явными директивами `[Camera]`, `[Motion]` и `[Continuity: anchor=sharpest_tail_frame]`, опирающимися на сверхбыстрый (<1 мс) алгоритм оценки резкости кадра через дисперсию лапласиана 3x3.
+Компилирует описания сцен на естественном языке в структурированные мульти-шот промпты с максимальной концентрацией внимания для **Grok Video, Kling, Sora, Veo и Wan 2.1**. Удаляет разговорный шум и формирует **двойной вывод (dual output)**: (1) структурированный XML-бриф (`<character_lock>` + блоки `<shot>` с настраиваемой длительностью `--shot-duration <SECONDS>`, по умолчанию `5s`) для LLM-генераторов промптов, и (2) чистые строки сэмплера без тегов (tag-free sampler strings) с принудительным повтором строки идентичности персонажа (`subject`, `lens`, `lighting`) в каждом клипе. Флаг `--video-anchor <CLIP.mp4>` извлекает самый резкий хвостовой кадр через FFmpeg и оценку дисперсии лапласиана 3x3 по сглаженному 60% центральному кропу (<1 мс на кадр), сохраняя его в `<clip>.anchor.png` для бесшовной склейки мульти-шот видео.
 
 ---
 
@@ -384,7 +384,9 @@ repox [OPTIONS] [PATH]
   -p, --token-profile <PROF> Профиль токенизатора: 'fable' (Claude Fable 5.1, 1M), 'luna' (GPT-6 Luna, 1.05M), 'claude', 'o1', 'deepseek', 'gemini', 'llama', 'cl100k' [по умолчанию: cl100k]
   -b, --budget <TOKENS>      Автоматически уложить репозиторий в строгий лимит токенов (напр. 50k, 100000; алиас: --max-tokens)
   -r, --redact-secrets       Сканировать и маскировать API-ключи, токены и приватные ключи заглушкой [REDACTED_SECRET]
-      --video-prompt <TEXT>  Скомпилировать описание видео в мульти-шот промпт с <character_lock> и 5-секундными блоками <shot>
+      --video-prompt <TEXT>  Скомпилировать описание видео в мульти-шот промпт с <character_lock>, блоками <shot> и чистыми строками сэмплера
+      --video-anchor <FILE>  Извлечь самый резкий хвостовой кадр видеоклипа через FFmpeg и 60% center-crop лапласиан в <clip>.anchor.png
+      --shot-duration <SECONDS>  Длительность каждого шота в секундах при компиляции видео-промпта [по умолчанию: 5]
       --outline              Извлекать только архитектурные сигнатуры и определения типов (алиас: --signatures-only)
       --summary-locks        Сжимать lock-файлы и JSON-воркфлоу ComfyUI в компактные манифесты
   -m, --modified             Упаковать только изменённые и неотслеживаемые файлы Git вместе с unified diff
