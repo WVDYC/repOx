@@ -21,8 +21,8 @@ Register-ArgumentCompleter -Native -CommandName 'repox' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'repox' {
-            [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'Format template: ''xml'' (Claude-optimized) or ''markdown'' / ''md''')
-            [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Format template: ''xml'' (Claude-optimized) or ''markdown'' / ''md''')
+            [CompletionResult]::new('-f', '-f', [CompletionResultType]::ParameterName, 'Format template: ''xml'' (Claude), ''markdown'' / ''md'', or ''tool-call'' (agent JSON)')
+            [CompletionResult]::new('--format', '--format', [CompletionResultType]::ParameterName, 'Format template: ''xml'' (Claude), ''markdown'' / ''md'', or ''tool-call'' (agent JSON)')
             [CompletionResult]::new('-o', '-o', [CompletionResultType]::ParameterName, 'Write formatted context to an output file instead of stdout')
             [CompletionResult]::new('--output', '--output', [CompletionResultType]::ParameterName, 'Write formatted context to an output file instead of stdout')
             [CompletionResult]::new('-p', '-p', [CompletionResultType]::ParameterName, 'Tokenizer profile: ''fable'', ''luna'', ''gemini'', ''claude'', ''o1'', ''deepseek'', ''llama'', ''cl100k''')
@@ -38,6 +38,8 @@ Register-ArgumentCompleter -Native -CommandName 'repox' -ScriptBlock {
             [CompletionResult]::new('-j', '-j', [CompletionResultType]::ParameterName, 'Number of worker threads (defaults to logical CPU core count)')
             [CompletionResult]::new('--threads', '--threads', [CompletionResultType]::ParameterName, 'Number of worker threads (defaults to logical CPU core count)')
             [CompletionResult]::new('--completions', '--completions', [CompletionResultType]::ParameterName, 'Generate shell completions (bash, zsh, fish, powershell, elvish)')
+            [CompletionResult]::new('--budget', '--budget', [CompletionResultType]::ParameterName, 'Auto-compress (via outlines) and prune files to fit within token budget (e.g. 50k, 100k)')
+            [CompletionResult]::new('--video-prompt', '--video-prompt', [CompletionResultType]::ParameterName, 'Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & 5s shots')
             [CompletionResult]::new('-c', '-c', [CompletionResultType]::ParameterName, 'Copy output context directly to system clipboard')
             [CompletionResult]::new('--copy', '--copy', [CompletionResultType]::ParameterName, 'Copy output context directly to system clipboard')
             [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Calculate total token count using multi-threaded tiktoken tokenizer')
@@ -51,6 +53,13 @@ Register-ArgumentCompleter -Native -CommandName 'repox' -ScriptBlock {
             [CompletionResult]::new('--quiet', '--quiet', [CompletionResultType]::ParameterName, 'Silence informational statistics on stderr')
             [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'Enable verbose debug logs')
             [CompletionResult]::new('--verbose', '--verbose', [CompletionResultType]::ParameterName, 'Enable verbose debug logs')
+            [CompletionResult]::new('--outline', '--outline', [CompletionResultType]::ParameterName, 'Extract architecture signatures and type outlines only (strips function bodies)')
+            [CompletionResult]::new('--summary-locks', '--summary-locks', [CompletionResultType]::ParameterName, 'Summarize lockfiles into compact dependency manifests instead of skipping them')
+            [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'Only pack Git modified and untracked files')
+            [CompletionResult]::new('--modified', '--modified', [CompletionResultType]::ParameterName, 'Only pack Git modified and untracked files')
+            [CompletionResult]::new('--staged', '--staged', [CompletionResultType]::ParameterName, 'Only pack Git staged files')
+            [CompletionResult]::new('-r', '-r', [CompletionResultType]::ParameterName, 'Scan and redact inline secrets, API keys, and private keys with [REDACTED_SECRET]')
+            [CompletionResult]::new('--redact-secrets', '--redact-secrets', [CompletionResultType]::ParameterName, 'Scan and redact inline secrets, API keys, and private keys with [REDACTED_SECRET]')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')

@@ -18,8 +18,8 @@ set edit:completion:arg-completer[repox] = {|@words|
     }
     var completions = [
         &'repox'= {
-            cand -f 'Format template: ''xml'' (Claude-optimized) or ''markdown'' / ''md'''
-            cand --format 'Format template: ''xml'' (Claude-optimized) or ''markdown'' / ''md'''
+            cand -f 'Format template: ''xml'' (Claude), ''markdown'' / ''md'', or ''tool-call'' (agent JSON)'
+            cand --format 'Format template: ''xml'' (Claude), ''markdown'' / ''md'', or ''tool-call'' (agent JSON)'
             cand -o 'Write formatted context to an output file instead of stdout'
             cand --output 'Write formatted context to an output file instead of stdout'
             cand -p 'Tokenizer profile: ''fable'', ''luna'', ''gemini'', ''claude'', ''o1'', ''deepseek'', ''llama'', ''cl100k'''
@@ -35,6 +35,8 @@ set edit:completion:arg-completer[repox] = {|@words|
             cand -j 'Number of worker threads (defaults to logical CPU core count)'
             cand --threads 'Number of worker threads (defaults to logical CPU core count)'
             cand --completions 'Generate shell completions (bash, zsh, fish, powershell, elvish)'
+            cand --budget 'Auto-compress (via outlines) and prune files to fit within token budget (e.g. 50k, 100k)'
+            cand --video-prompt 'Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & 5s shots'
             cand -c 'Copy output context directly to system clipboard'
             cand --copy 'Copy output context directly to system clipboard'
             cand -t 'Calculate total token count using multi-threaded tiktoken tokenizer'
@@ -48,6 +50,13 @@ set edit:completion:arg-completer[repox] = {|@words|
             cand --quiet 'Silence informational statistics on stderr'
             cand -v 'Enable verbose debug logs'
             cand --verbose 'Enable verbose debug logs'
+            cand --outline 'Extract architecture signatures and type outlines only (strips function bodies)'
+            cand --summary-locks 'Summarize lockfiles into compact dependency manifests instead of skipping them'
+            cand -m 'Only pack Git modified and untracked files'
+            cand --modified 'Only pack Git modified and untracked files'
+            cand --staged 'Only pack Git staged files'
+            cand -r 'Scan and redact inline secrets, API keys, and private keys with [REDACTED_SECRET]'
+            cand --redact-secrets 'Scan and redact inline secrets, API keys, and private keys with [REDACTED_SECRET]'
             cand -h 'Print help (see more with ''--help'')'
             cand --help 'Print help (see more with ''--help'')'
             cand -V 'Print version'

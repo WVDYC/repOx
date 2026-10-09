@@ -23,7 +23,7 @@ _repox() {
 
     case "${cmd}" in
         repox)
-            opts="-f -c -o -t -p -s -d -e -I -j -i -q -v -h -V --format --copy --output --tokens --token-profile --max-file-size --max-depth --no-gitignore --no-repoxignore --include-hidden --exclude --include --threads --interactive --quiet --verbose --completions --help --version"
+            opts="-f -c -o -t -p -s -d -e -I -j -i -q -v -m -r -h -V --format --copy --output --tokens --token-profile --max-file-size --max-depth --no-gitignore --no-repoxignore --include-hidden --exclude --include --threads --interactive --quiet --verbose --completions --outline --summary-locks --modified --staged --budget --redact-secrets --video-prompt --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -95,6 +95,14 @@ _repox() {
                     ;;
                 --completions)
                     COMPREPLY=($(compgen -W "bash elvish fish powershell zsh" -- "${cur}"))
+                    return 0
+                    ;;
+                --budget)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --video-prompt)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 *)

@@ -279,13 +279,29 @@ pub struct Cli {
     )]
     pub redact_secrets: bool,
 
-    /// Optimize a raw AI video prompt into structured <character_lock> and 5s <shot> blocks.
+    /// Optimize a raw AI video prompt into structured <character_lock> and <shot> blocks plus paste-ready sampler prompts.
     #[arg(
         long = "video-prompt",
         value_name = "PROMPT",
-        help = "Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & 5s shots"
+        help = "Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & paste-ready clip prompts"
     )]
     pub video_prompt: Option<String>,
+
+    /// Extract the sharpest tail frame from a video file via FFmpeg as a conditioning anchor PNG (<stem>.anchor.png).
+    #[arg(
+        long = "video-anchor",
+        value_name = "VIDEO_FILE",
+        help = "Extract the sharpest tail frame from a video clip via FFmpeg for shot-to-shot continuity (<stem>.anchor.png)"
+    )]
+    pub video_anchor: Option<PathBuf>,
+
+    /// Explicit per-shot duration in seconds when optimizing AI video prompts.
+    #[arg(
+        long = "shot-duration",
+        value_name = "SECONDS",
+        help = "Explicit shot duration in seconds for --video-prompt (omitted if not specified)"
+    )]
+    pub shot_duration: Option<u32>,
 }
 
 impl Cli {
@@ -455,6 +471,10 @@ mod tests {
             "-r",
             "--video-prompt",
             "Please generate a video of a neon samurai walking in the rain.",
+            "--video-anchor",
+            "clip1.mp4",
+            "--shot-duration",
+            "5",
         ])
         .unwrap();
 
@@ -464,6 +484,8 @@ mod tests {
             cli.video_prompt.as_deref(),
             Some("Please generate a video of a neon samurai walking in the rain.")
         );
+        assert_eq!(cli.video_anchor, Some(PathBuf::from("clip1.mp4")));
+        assert_eq!(cli.shot_duration, Some(5));
 
         let scan_opts = cli.to_scan_options();
         assert!(scan_opts.redact_secrets);
@@ -472,5 +494,7 @@ mod tests {
             Cli::try_parse_from(["repox", "--max-tokens", "100K", "--redact-secrets"]).unwrap();
         assert_eq!(cli_alias.budget, Some(100_000));
         assert!(cli_alias.redact_secrets);
+        assert!(cli_alias.video_anchor.is_none());
+        assert!(cli_alias.shot_duration.is_none());
     }
 }

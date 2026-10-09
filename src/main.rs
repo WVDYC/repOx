@@ -139,9 +139,45 @@ fn main() -> eyre::Result<()> {
 
     let total_start = Instant::now();
 
-    // 0. Handle standalone AI video prompt optimization mode if requested
+    // 0. Handle AI video tail-frame anchor extraction and/or video prompt optimization if requested
+    let extracted_anchor_png = if let Some(ref video_path) = cli.video_anchor {
+        let (png_path, frame_idx, sharpness) = repox_core::video::extract_sharpest_tail_frame(
+            video_path, None, 12.0,
+        )
+        .wrap_err_with(|| {
+            format!(
+                "Failed to extract sharpest tail frame from {}",
+                video_path.display()
+            )
+        })?;
+        if !cli.quiet {
+            eprintln!(
+                "🎞️ Extracted sharpest tail frame (#{frame_idx}, sharpness={sharpness:.1}) -> {}",
+                png_path.display()
+            );
+        }
+        if cli.video_prompt.is_none() {
+            let mut stdout = io::stdout().lock();
+            writeln!(
+                stdout,
+                "{} (frame #{frame_idx}, sharpness={sharpness:.2})",
+                png_path.display()
+            )
+            .wrap_err("Failed to write anchor frame info to stdout")?;
+            stdout.flush().wrap_err("Failed to flush stdout")?;
+            return Ok(());
+        }
+        Some(png_path)
+    } else {
+        None
+    };
+
     if let Some(ref raw_video_prompt) = cli.video_prompt {
-        let optimized = repox_core::optimize_video_prompt(raw_video_prompt);
+        let optimized = repox_core::video::optimize_video_prompt_with_options(
+            raw_video_prompt,
+            cli.shot_duration,
+            extracted_anchor_png.as_deref(),
+        );
         let raw_tokens =
             repox_core::count_text_tokens(raw_video_prompt, cli.token_profile).into_token_count();
         let opt_tokens =

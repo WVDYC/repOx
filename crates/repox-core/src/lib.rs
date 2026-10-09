@@ -30,6 +30,7 @@ pub use scanner::scan_repository;
 pub use tokenizer::{TokenCounter, count_text_tokens};
 pub use tree::generate_file_tree;
 pub use video::{
-    compute_frame_sharpness, optimize_video_prompt, select_sharpest_frame,
+    compute_frame_sharpness, extract_sharpest_tail_frame, optimize_video_prompt,
+    optimize_video_prompt_with_options, parse_pgm_stream, select_sharpest_frame,
     summarize_comfyui_workflow,
 };

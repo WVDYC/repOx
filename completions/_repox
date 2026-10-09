@@ -15,8 +15,8 @@ _repox() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" : \
-'-f+[Format template\: '\''xml'\'' (Claude-optimized) or '\''markdown'\'' / '\''md'\'']:FORMAT:_default' \
-'--format=[Format template\: '\''xml'\'' (Claude-optimized) or '\''markdown'\'' / '\''md'\'']:FORMAT:_default' \
+'-f+[Format template\: '\''xml'\'' (Claude), '\''markdown'\'' / '\''md'\'', or '\''tool-call'\'' (agent JSON)]:FORMAT:_default' \
+'--format=[Format template\: '\''xml'\'' (Claude), '\''markdown'\'' / '\''md'\'', or '\''tool-call'\'' (agent JSON)]:FORMAT:_default' \
 '-o+[Write formatted context to an output file instead of stdout]:FILE:_files' \
 '--output=[Write formatted context to an output file instead of stdout]:FILE:_files' \
 '-p+[Tokenizer profile\: '\''fable'\'', '\''luna'\'', '\''gemini'\'', '\''claude'\'', '\''o1'\'', '\''deepseek'\'', '\''llama'\'', '\''cl100k'\'']:PROFILE:_default' \
@@ -32,6 +32,8 @@ _repox() {
 '-j+[Number of worker threads (defaults to logical CPU core count)]:N:_default' \
 '--threads=[Number of worker threads (defaults to logical CPU core count)]:N:_default' \
 '--completions=[Generate shell completions (bash, zsh, fish, powershell, elvish)]:SHELL:(bash elvish fish powershell zsh)' \
+'--budget=[Auto-compress (via outlines) and prune files to fit within token budget (e.g. 50k, 100k)]:TOKENS:_default' \
+'--video-prompt=[Optimize an AI video generation prompt (Grok, Kling, Sora, Veo, Wan 2.1) with character lock & 5s shots]:PROMPT:_default' \
 '-c[Copy output context directly to system clipboard]' \
 '--copy[Copy output context directly to system clipboard]' \
 '-t[Calculate total token count using multi-threaded tiktoken tokenizer]' \
@@ -45,6 +47,13 @@ _repox() {
 '--quiet[Silence informational statistics on stderr]' \
 '-v[Enable verbose debug logs]' \
 '--verbose[Enable verbose debug logs]' \
+'--outline[Extract architecture signatures and type outlines only (strips function bodies)]' \
+'--summary-locks[Summarize lockfiles into compact dependency manifests instead of skipping them]' \
+'-m[Only pack Git modified and untracked files]' \
+'--modified[Only pack Git modified and untracked files]' \
+'--staged[Only pack Git staged files]' \
+'-r[Scan and redact inline secrets, API keys, and private keys with \[REDACTED_SECRET\]]' \
+'--redact-secrets[Scan and redact inline secrets, API keys, and private keys with \[REDACTED_SECRET\]]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \
